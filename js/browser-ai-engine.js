@@ -177,6 +177,11 @@ class BrowserAIEngine {
             console.log(`✅ AI Engine initialized with ${this.currentBackend} backend`);
             this.logCapabilities();
             
+            // Preload essential models
+            if (this.cacheConfig.preloadModels.length > 0) {
+                setTimeout(() => this.preloadModels(), 1000); // Preload after 1 second
+            }
+            
         } catch (error) {
             console.error('❌ Failed to initialize AI Engine:', error);
             this.currentBackend = 'fallback';

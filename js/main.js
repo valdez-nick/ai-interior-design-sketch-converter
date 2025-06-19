@@ -968,6 +968,15 @@ function showDownloadNotification(message) {
     }, 3000);
 }
 
+// Utility function for formatting bytes
+function formatBytes(bytes) {
+    if (bytes === 0) return '0 B';
+    const k = 1024;
+    const sizes = ['B', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return `${parseFloat((bytes / Math.pow(k, i)).toFixed(1))} ${sizes[i]}`;
+}
+
 // Demo functions for testing AI edge detection
 window.demoEdgeDetection = async function() {
     if (!currentImageData) {
@@ -1058,6 +1067,53 @@ window.demoControlNet = async function() {
     return results;
 };
 
+window.getCacheStats = function() {
+    if (!unifiedAIManager || !unifiedAIManager.isInitialized) {
+        console.warn('⚠️ AI Manager not available');
+        return null;
+    }
+    
+    const onnxEngine = unifiedAIManager.engines?.get('onnx');
+    if (!onnxEngine || !onnxEngine.getCacheStats) {
+        console.warn('⚠️ ONNX engine not available');
+        return null;
+    }
+    
+    const stats = onnxEngine.getCacheStats();
+    console.log('📊 Model Cache Statistics:');
+    console.log(`  Models loaded: ${stats.totalModels}/${stats.maxModels}`);
+    console.log(`  Cache size: ${formatBytes(stats.totalSize)} / ${formatBytes(stats.maxSize)} (${stats.utilizationPercent.toFixed(1)}%)`);
+    console.log(`  Average model size: ${formatBytes(stats.averageModelSize)}`);
+    console.log(`  Recently used: ${stats.recentlyUsed.join(', ')}`);
+    
+    return stats;
+};
+
+window.optimizeCache = function() {
+    if (!unifiedAIManager || !unifiedAIManager.isInitialized) {
+        console.warn('⚠️ AI Manager not available');
+        return null;
+    }
+    
+    const onnxEngine = unifiedAIManager.engines?.get('onnx');
+    if (!onnxEngine || !onnxEngine.optimizeCache) {
+        console.warn('⚠️ ONNX engine not available');
+        return null;
+    }
+    
+    return onnxEngine.optimizeCache();
+};
+
+window.clearModelCache = function() {
+    if (!unifiedAIManager || !unifiedAIManager.isInitialized) {
+        console.warn('⚠️ AI Manager not available');
+        return;
+    }
+    
+    unifiedAIManager.clearCaches();
+    console.log('🗑️ All model caches cleared');
+};
+
 // Display AI capabilities status
 function displayAICapabilities() {
     if (unifiedAIManager && unifiedAIManager.isInitialized) {
@@ -1100,6 +1156,9 @@ function displayAICapabilities() {
         console.log('  demoEdgeDetection() - Test multiple edge detection models');
         console.log('  benchmarkEdgeDetection(3) - Performance benchmark with 3 iterations');
         console.log('  demoControlNet() - Test ControlNet-style sketch conversion');
+        console.log('  getCacheStats() - View model cache statistics');
+        console.log('  optimizeCache() - Get cache optimization suggestions');
+        console.log('  clearModelCache() - Clear all cached models');
         console.log('Load an image and try: demoEdgeDetection() or demoControlNet()');
     } else {
         console.log('🔋 Traditional processing only (AI not available)');
