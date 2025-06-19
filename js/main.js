@@ -351,44 +351,104 @@ startxref
 
 // Initialize modules
 function init() {
+    console.log('Initializing application...');
+    
+    // Verify essential DOM elements exist
+    if (!uploadArea || !fileInput) {
+        console.error('Essential DOM elements missing');
+        return;
+    }
+    
     // Initialize AI processor if available
     try {
-        aiProcessor = new AIProcessor();
-        console.log('AI Processor initialized successfully');
+        if (typeof AIProcessor !== 'undefined') {
+            aiProcessor = new AIProcessor();
+            console.log('AI Processor initialized successfully');
+        } else {
+            console.warn('AIProcessor class not available');
+            aiProcessor = null;
+        }
     } catch (error) {
         console.warn('AI Processor not available:', error.message);
         aiProcessor = null;
     }
     
-    // Initialize core modules
-    imageProcessor = new ImageProcessor(originalCanvas, resultCanvas);
-    edgeDetector = new EdgeDetection();
-    handDrawnEffects = new HandDrawnEffects(resultCanvas, {
-        aiProcessor: aiProcessor,
-        useAI: true,
-        interiorMode: true,
-        materialAwareness: true,
-        furniturePreservation: true
-    });
+    // Initialize core modules with error handling
+    try {
+        if (typeof ImageProcessor !== 'undefined') {
+            imageProcessor = new ImageProcessor(originalCanvas, resultCanvas);
+            console.log('Image Processor initialized');
+        } else {
+            console.error('ImageProcessor class not available');
+            return;
+        }
+    } catch (error) {
+        console.error('Failed to initialize ImageProcessor:', error);
+        return;
+    }
+    
+    try {
+        if (typeof EdgeDetection !== 'undefined') {
+            edgeDetector = new EdgeDetection();
+            console.log('Edge Detector initialized');
+        } else {
+            console.warn('EdgeDetection class not available');
+            edgeDetector = null;
+        }
+    } catch (error) {
+        console.warn('Edge Detector not available:', error.message);
+        edgeDetector = null;
+    }
+    
+    try {
+        if (typeof HandDrawnEffects !== 'undefined') {
+            handDrawnEffects = new HandDrawnEffects(resultCanvas, {
+                aiProcessor: aiProcessor,
+                useAI: true,
+                interiorMode: true,
+                materialAwareness: true,
+                furniturePreservation: true
+            });
+            console.log('Hand Drawn Effects initialized');
+        } else {
+            console.warn('HandDrawnEffects class not available');
+            handDrawnEffects = null;
+        }
+    } catch (error) {
+        console.warn('Hand Drawn Effects not available:', error.message);
+        handDrawnEffects = null;
+    }
     
     // Initialize style manager with AI integration
     try {
-        styleManager = new StyleManager(aiProcessor, handDrawnEffects);
-        console.log('Style Manager initialized with AI integration');
+        if (typeof StyleManager !== 'undefined') {
+            styleManager = new StyleManager(aiProcessor, handDrawnEffects);
+            console.log('Style Manager initialized with AI integration');
+        } else {
+            console.warn('StyleManager class not available');
+            styleManager = null;
+        }
     } catch (error) {
         console.warn('Style Manager not available:', error.message);
         styleManager = null;
     }
     
     // Initialize download manager
-    downloadManager = new DownloadManager({
-        canvas: resultCanvas,
-        onProgress: updateDownloadProgress,
-        onError: handleDownloadError,
-        onComplete: handleDownloadComplete
-    });
+    try {
+        downloadManager = new DownloadManager({
+            canvas: resultCanvas,
+            onProgress: updateDownloadProgress,
+            onError: handleDownloadError,
+            onComplete: handleDownloadComplete
+        });
+        console.log('Download Manager initialized');
+    } catch (error) {
+        console.warn('Download Manager not available:', error.message);
+        downloadManager = null;
+    }
     
     setupEventListeners();
+    console.log('Application initialization complete');
 }
 
 // Setup all event listeners
@@ -456,15 +516,31 @@ async function handleDrop(e) {
 // Load and display image
 async function loadImage(file) {
     try {
-        await imageProcessor.loadImage(file);
-        currentImageData = imageProcessor.getImageData();
+        console.log('Loading image:', file.name);
+        
+        if (imageProcessor) {
+            await imageProcessor.loadImage(file);
+            currentImageData = imageProcessor.getImageData();
+        } else {
+            // Fallback: load image manually
+            console.warn('ImageProcessor not available, using fallback');
+            await loadImageFallback(file);
+        }
         
         // Show workspace and hide upload area
-        workspace.style.display = 'grid';
-        uploadArea.style.display = 'none';
+        if (workspace) {
+            workspace.style.display = 'grid';
+        }
+        if (uploadArea) {
+            uploadArea.style.display = 'none';
+        }
         
         // Enable process button
-        processBtn.disabled = false;
+        if (processBtn) {
+            processBtn.disabled = false;
+        }
+        
+        console.log('Image loaded successfully');
         
         // Auto-process with default settings
         await processImage();
@@ -472,6 +548,52 @@ async function loadImage(file) {
         console.error('Error loading image:', error);
         alert('Failed to load image. Please try another file.');
     }
+}
+
+// Fallback image loading when ImageProcessor is not available
+async function loadImageFallback(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        
+        reader.onload = function(e) {
+            const img = new Image();
+            
+            img.onload = function() {
+                console.log('Fallback image loaded:', img.width, 'x', img.height);
+                
+                // Set canvas size and draw image
+                if (originalCanvas && resultCanvas) {
+                    originalCanvas.width = img.width;
+                    originalCanvas.height = img.height;
+                    resultCanvas.width = img.width;
+                    resultCanvas.height = img.height;
+                    
+                    const originalCtx = originalCanvas.getContext('2d');
+                    const resultCtx = resultCanvas.getContext('2d');
+                    
+                    originalCtx.drawImage(img, 0, 0);
+                    resultCtx.drawImage(img, 0, 0);
+                    
+                    // Create basic image data for processing
+                    currentImageData = originalCtx.getImageData(0, 0, img.width, img.height);
+                }
+                
+                resolve(img);
+            };
+            
+            img.onerror = function() {
+                reject(new Error('Failed to load image'));
+            };
+            
+            img.src = e.target.result;
+        };
+        
+        reader.onerror = function() {
+            reject(new Error('Failed to read file'));
+        };
+        
+        reader.readAsDataURL(file);
+    });
 }
 
 // Process image with current settings
