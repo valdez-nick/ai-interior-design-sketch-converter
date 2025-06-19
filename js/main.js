@@ -21,6 +21,7 @@ let aiProcessor;
 let styleManager;
 let downloadManager;
 let unifiedAIManager; // New 2025 AI system
+let progressiveEnhancement; // Progressive enhancement manager
 let currentImageData = null;
 let isProcessing = false;
 let isDownloading = false;
@@ -360,11 +361,36 @@ async function init() {
         return;
     }
     
-    // Initialize new 2025 AI system
+    // Initialize progressive enhancement system first
+    try {
+        if (typeof ProgressiveEnhancementManager !== 'undefined') {
+            progressiveEnhancement = new ProgressiveEnhancementManager();
+            await progressiveEnhancement.detectDeviceCapabilities();
+            progressiveEnhancement.assignPerformanceTier();
+            
+            // Run performance benchmark
+            await progressiveEnhancement.runPerformanceBenchmark();
+            
+            console.log('🎯 Progressive Enhancement initialized successfully');
+        } else {
+            console.warn('ProgressiveEnhancementManager not available');
+        }
+    } catch (error) {
+        console.warn('🎯 Progressive Enhancement not available:', error.message);
+    }
+    
+    // Initialize new 2025 AI system with progressive enhancement
     try {
         if (typeof UnifiedAIManager !== 'undefined') {
             unifiedAIManager = new UnifiedAIManager();
             await unifiedAIManager.initialize();
+            
+            // Apply progressive enhancements
+            if (progressiveEnhancement) {
+                progressiveEnhancement.applyAdaptiveOptimizations();
+                progressiveEnhancement.startPerformanceMonitoring();
+            }
+            
             console.log('🚀 Unified AI Manager initialized successfully');
         } else {
             console.warn('UnifiedAIManager not available');
@@ -1148,6 +1174,90 @@ window.demoTransformersCapabilities = async function() {
     return results;
 };
 
+window.getSystemStatus = function() {
+    if (!progressiveEnhancement) {
+        console.warn('⚠️ Progressive Enhancement not available');
+        return null;
+    }
+    
+    const status = progressiveEnhancement.getSystemStatus();
+    
+    console.log('🎯 System Status:');
+    console.log(`  Performance Tier: ${status.tierName}`);
+    console.log(`  Current Tier ID: ${status.currentTier}`);
+    
+    if (status.performanceProfile) {
+        console.log(`  Performance Score: ${status.performanceProfile.averageScore.toFixed(1)}/100`);
+        console.log(`  Classification: ${status.performanceProfile.classification}`);
+    }
+    
+    console.log(`  Device Capabilities:`);
+    console.log(`    WebGPU: ${status.deviceCapabilities.webgpu ? '✅' : '❌'}`);
+    console.log(`    WebGL: ${status.deviceCapabilities.webgl ? '✅' : '❌'}`);
+    console.log(`    WebAssembly: ${status.deviceCapabilities.wasm ? '✅' : '❌'}`);
+    console.log(`    Memory: ${status.deviceCapabilities.memory}GB`);
+    console.log(`    CPU Cores: ${status.deviceCapabilities.cores}`);
+    console.log(`    Mobile: ${status.deviceCapabilities.mobile ? '✅' : '❌'}`);
+    
+    if (status.configuration) {
+        const config = status.configuration;
+        console.log(`  Configuration:`);
+        console.log(`    Max Models: ${config.capabilities.maxModels}`);
+        console.log(`    Cache Size: ${config.capabilities.cacheSize}MB`);
+        console.log(`    Quality Level: ${config.capabilities.qualityLevel}`);
+        console.log(`    Preloading: ${config.capabilities.enablePreloading ? '✅' : '❌'}`);
+    }
+    
+    return status;
+};
+
+window.runPerformanceBenchmark = async function() {
+    if (!progressiveEnhancement) {
+        console.warn('⚠️ Progressive Enhancement not available');
+        return null;
+    }
+    
+    console.log('🏃 Starting comprehensive performance benchmark...');
+    const benchmark = await progressiveEnhancement.runPerformanceBenchmark();
+    
+    console.log('📈 Benchmark Results:');
+    Object.entries(benchmark.tests).forEach(([testName, result]) => {
+        if (result.score !== undefined) {
+            console.log(`  ${testName}: ${result.score.toFixed(1)}/100`);
+        } else {
+            console.log(`  ${testName}: ${result.error || 'No score'}`);
+        }
+    });
+    
+    const profile = progressiveEnhancement.performanceProfile;
+    if (profile) {
+        console.log(`🏆 Overall Score: ${profile.averageScore.toFixed(1)}/100 (${profile.classification})`);
+        
+        if (profile.shouldAdjust) {
+            console.log(`🔄 Recommendation: Switch to ${profile.recommendedTier}`);
+        }
+    }
+    
+    return benchmark;
+};
+
+window.togglePerformanceMonitoring = function() {
+    if (!progressiveEnhancement) {
+        console.warn('⚠️ Progressive Enhancement not available');
+        return;
+    }
+    
+    const status = progressiveEnhancement.getSystemStatus();
+    
+    if (status.monitoring.active) {
+        progressiveEnhancement.stopPerformanceMonitoring();
+        console.log('⏹️ Performance monitoring stopped');
+    } else {
+        progressiveEnhancement.startPerformanceMonitoring();
+        console.log('▶️ Performance monitoring started');
+    }
+};
+
 // Display AI capabilities status
 function displayAICapabilities() {
     if (unifiedAIManager && unifiedAIManager.isInitialized) {
@@ -1175,17 +1285,31 @@ function displayAICapabilities() {
             }
         }
         
-        // Add AI status indicator to header
+        // Add AI status indicator to header with performance tier
         const header = document.querySelector('header p');
         if (header && !header.querySelector('.ai-status')) {
             const aiStatus = document.createElement('span');
             aiStatus.className = 'ai-status';
-            aiStatus.innerHTML = ` <span style="color: #4CAF50;">🧠 AI Ready (${status.currentEngine.toUpperCase()})</span>`;
+            
+            let tierInfo = '';
+            if (progressiveEnhancement) {
+                const systemStatus = progressiveEnhancement.getSystemStatus();
+                tierInfo = ` | ${systemStatus.tierName || 'Unknown Tier'}`;
+            }
+            
+            aiStatus.innerHTML = ` <span style="color: #4CAF50;">🧠 AI Ready (${status.currentEngine.toUpperCase()}${tierInfo})</span>`;
             header.appendChild(aiStatus);
         }
         
-        // Log testing information
+        // Log testing information with progressive enhancement
         console.log('🧠 AI Processing Ready!');
+        
+        if (progressiveEnhancement) {
+            const systemStatus = progressiveEnhancement.getSystemStatus();
+            console.log(`🎯 Performance Tier: ${systemStatus.tierName}`);
+            console.log(`📊 Performance Score: ${systemStatus.performanceProfile?.averageScore?.toFixed(1) || 'Pending'}`);
+        }
+        
         console.log('Available test functions:');
         console.log('  demoEdgeDetection() - Test multiple edge detection models');
         console.log('  benchmarkEdgeDetection(3) - Performance benchmark with 3 iterations');
@@ -1194,6 +1318,9 @@ function displayAICapabilities() {
         console.log('  optimizeCache() - Get cache optimization suggestions');
         console.log('  clearModelCache() - Clear all cached models');
         console.log('  demoTransformersCapabilities() - Test advanced Transformers.js features');
+        console.log('  getSystemStatus() - View progressive enhancement status');
+        console.log('  runPerformanceBenchmark() - Re-run performance analysis');
+        console.log('  togglePerformanceMonitoring() - Start/stop real-time monitoring');
         console.log('Load an image and try: demoEdgeDetection() or demoControlNet()');
     } else {
         console.log('🔋 Traditional processing only (AI not available)');
@@ -1211,10 +1338,63 @@ function displayAICapabilities() {
     }
 }
 
+// Display performance tier information in UI
+function displayPerformanceTierInfo() {
+    const tierInfoDiv = document.getElementById('performanceTierInfo');
+    const tierNameSpan = document.getElementById('tierName');
+    const tierScoreSpan = document.getElementById('tierScore');
+    const tierDetailsDiv = document.getElementById('tierDetails');
+    
+    if (!tierInfoDiv || !progressiveEnhancement) {
+        return;
+    }
+    
+    const systemStatus = progressiveEnhancement.getSystemStatus();
+    
+    // Show the tier info section
+    tierInfoDiv.style.display = 'block';
+    
+    // Update tier name
+    if (tierNameSpan && systemStatus.tierName) {
+        tierNameSpan.textContent = systemStatus.tierName;
+        tierNameSpan.className = `tier-name tier-${systemStatus.currentTier}`;
+    }
+    
+    // Update performance score
+    if (tierScoreSpan && systemStatus.performanceProfile) {
+        const score = systemStatus.performanceProfile.averageScore;
+        const classification = systemStatus.performanceProfile.classification;
+        tierScoreSpan.textContent = `${score.toFixed(1)}/100 (${classification})`;
+        tierScoreSpan.className = `tier-score score-${classification}`;
+    }
+    
+    // Update details
+    if (tierDetailsDiv && systemStatus.deviceCapabilities) {
+        const caps = systemStatus.deviceCapabilities;
+        const details = [];
+        
+        if (caps.webgpu) details.push('WebGPU ✅');
+        else if (caps.webgl) details.push('WebGL ✅');
+        else details.push('CPU only');
+        
+        details.push(`${caps.memory}GB RAM`);
+        details.push(`${caps.cores} cores`);
+        
+        if (caps.mobile) details.push('Mobile device');
+        
+        tierDetailsDiv.innerHTML = `<small>${details.join(' • ')}</small>`;
+    }
+}
+
 // Initialize app when DOM is ready
 document.addEventListener('DOMContentLoaded', async () => {
     try {
         await init();
+        
+        // Update UI with tier information after everything is loaded
+        setTimeout(() => {
+            displayPerformanceTierInfo();
+        }, 500);
     } catch (error) {
         console.error('Application initialization failed:', error);
     }

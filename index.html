@@ -45,6 +45,17 @@
                                     <option value="hybrid">Hybrid Processing</option>
                                 </select>
                             </div>
+                            
+                            <div class="control-group" id="performanceTierInfo" style="display: none;">
+                                <label>Performance Tier</label>
+                                <div class="tier-status">
+                                    <span id="tierName">Detecting...</span>
+                                    <span id="tierScore" class="tier-score"></span>
+                                </div>
+                                <div class="tier-details" id="tierDetails">
+                                    <small>Device capabilities being analyzed...</small>
+                                </div>
+                            </div>
 
                             <div class="control-group api-config" id="apiConfig" style="display: none;">
                                 <label for="apiKey">API Key</label>
@@ -335,6 +346,7 @@
     <script src="js/collapsibleSections.js"></script>
     
     <!-- 2025 Browser AI System -->
+    <script src="js/progressive-enhancement.js"></script>
     <script src="js/browser-ai-engine.js"></script>
     <script src="js/transformers-ai-engine.js"></script>
     <script src="js/unified-ai-manager.js"></script>
