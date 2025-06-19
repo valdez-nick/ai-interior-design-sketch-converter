@@ -1114,6 +1114,40 @@ window.clearModelCache = function() {
     console.log('🗑️ All model caches cleared');
 };
 
+window.demoTransformersCapabilities = async function() {
+    if (!currentImageData) {
+        console.warn('⚠️ Please load an image first');
+        return;
+    }
+    
+    if (!unifiedAIManager || !unifiedAIManager.isInitialized) {
+        console.warn('⚠️ AI Manager not available');
+        return;
+    }
+    
+    console.log('🤖 Starting advanced Transformers.js capabilities demo...');
+    const results = await unifiedAIManager.demoTransformersCapabilities(currentImageData);
+    
+    if (results) {
+        console.log('🏆 Transformers.js demo results:');
+        console.log(`  Models tested: ${results.summary.totalTests}`);
+        console.log(`  Successful: ${results.summary.successful}`);
+        console.log(`  With analysis: ${results.summary.withAnalysis}`);
+        console.log(`  Average time: ${results.summary.averageProcessingTime.toFixed(2)}ms`);
+        
+        // Log capabilities
+        const capabilities = results.capabilities;
+        if (capabilities.enhancedFeatures) {
+            console.log('🔧 Enhanced features:');
+            Object.entries(capabilities.enhancedFeatures).forEach(([feature, enabled]) => {
+                console.log(`  ${feature}: ${enabled ? '✅' : '❌'}`);
+            });
+        }
+    }
+    
+    return results;
+};
+
 // Display AI capabilities status
 function displayAICapabilities() {
     if (unifiedAIManager && unifiedAIManager.isInitialized) {
@@ -1159,6 +1193,7 @@ function displayAICapabilities() {
         console.log('  getCacheStats() - View model cache statistics');
         console.log('  optimizeCache() - Get cache optimization suggestions');
         console.log('  clearModelCache() - Clear all cached models');
+        console.log('  demoTransformersCapabilities() - Test advanced Transformers.js features');
         console.log('Load an image and try: demoEdgeDetection() or demoControlNet()');
     } else {
         console.log('🔋 Traditional processing only (AI not available)');

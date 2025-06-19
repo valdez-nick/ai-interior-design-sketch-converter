@@ -354,6 +354,9 @@ class UnifiedAIManager {
             'ai_controlnet_sketch': 'controlnet_sketch',
             'ai_controlnet_lineart': 'controlnet_lineart',
             'ai_controlnet_depth': 'controlnet_depth',
+            'ai_interior_optimized': 'interior_sketch',
+            'ai_material_aware': 'interior_sketch', 
+            'ai_room_analysis': 'interior_sketch',
             'interior_presentation': 'interior_sketch',
             'architectural_lines': 'architectural_edges',
             'furniture_focus': 'interior_sketch'
