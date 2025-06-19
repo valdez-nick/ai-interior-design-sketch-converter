@@ -20,6 +20,7 @@ let handDrawnEffects;
 let aiProcessor;
 let styleManager;
 let downloadManager;
+let unifiedAIManager; // New 2025 AI system
 let currentImageData = null;
 let isProcessing = false;
 let isDownloading = false;
@@ -350,7 +351,7 @@ startxref
 }
 
 // Initialize modules
-function init() {
+async function init() {
     console.log('Initializing application...');
     
     // Verify essential DOM elements exist
@@ -359,7 +360,20 @@ function init() {
         return;
     }
     
-    // Initialize AI processor if available
+    // Initialize new 2025 AI system
+    try {
+        if (typeof UnifiedAIManager !== 'undefined') {
+            unifiedAIManager = new UnifiedAIManager();
+            await unifiedAIManager.initialize();
+            console.log('🚀 Unified AI Manager initialized successfully');
+        } else {
+            console.warn('UnifiedAIManager not available');
+        }
+    } catch (error) {
+        console.warn('🚀 Unified AI Manager not available:', error.message);
+    }
+    
+    // Initialize legacy AI processor for fallback
     try {
         if (typeof AIProcessor !== 'undefined') {
             aiProcessor = new AIProcessor();
@@ -422,7 +436,7 @@ function init() {
     // Initialize style manager with AI integration
     try {
         if (typeof StyleManager !== 'undefined') {
-            styleManager = new StyleManager(aiProcessor, handDrawnEffects);
+            styleManager = new StyleManager(unifiedAIManager || aiProcessor, handDrawnEffects);
             console.log('Style Manager initialized with AI integration');
         } else {
             console.warn('StyleManager class not available');
@@ -448,6 +462,10 @@ function init() {
     }
     
     setupEventListeners();
+    
+    // Display AI capabilities status
+    displayAICapabilities();
+    
     console.log('Application initialization complete');
 }
 
@@ -607,35 +625,85 @@ async function processImage() {
     // Use setTimeout to ensure UI updates before processing
     setTimeout(async () => {
         try {
-            // Convert to grayscale
-            const grayscaleData = imageProcessor.toGrayscale(currentImageData);
+            console.log('🎨 Starting image processing with style:', stylePreset.value);
             
-            // Apply slight blur for noise reduction
-            const blurredData = imageProcessor.gaussianBlur(grayscaleData, 1);
+            // Get processing mode and determine if AI should be used
+            const processingMode = document.getElementById('processingMode')?.value || 'traditional';
+            const selectedStyle = stylePreset.value;
             
-            // Detect edges
-            const edges = edgeDetector.detectArchitecturalEdges(blurredData, {
-                threshold: parseInt(edgeThreshold.value),
-                blur: true,
-                thinning: true
-            });
+            let result;
             
-            // Apply hand-drawn effect (now async)
-            const result = await handDrawnEffects.applyHandDrawnEffect(edges, {
-                style: stylePreset.value,
-                lineVariation: parseInt(lineVariation.value),
-                lineThickness: parseFloat(lineThickness.value),
-                texture: true
-            });
+            // Try AI processing first if available and enabled
+            if (unifiedAIManager && unifiedAIManager.isInitialized && processingMode !== 'traditional') {
+                try {
+                    console.log('🤖 Attempting AI processing with unified manager');
+                    
+                    // Map traditional styles to AI styles
+                    const aiStyleMapping = {
+                        'pencil': 'ai_sketch',
+                        'pen': 'ai_edge_enhanced',
+                        'charcoal': 'ai_artistic',
+                        'technical': 'ai_technical',
+                        'modern': 'interior_presentation',
+                        'scandinavian': 'furniture_focus',
+                        'industrial': 'architectural_lines',
+                        'contemporary': 'interior_presentation'
+                    };
+                    
+                    const aiStyle = aiStyleMapping[selectedStyle] || 'ai_sketch';
+                    
+                    const aiOptions = {
+                        threshold: parseInt(edgeThreshold.value),
+                        lineVariation: parseInt(lineVariation.value),
+                        lineThickness: parseFloat(lineThickness.value),
+                        quality: processingMode === 'cloud' ? 'desktop' : 'auto'
+                    };
+                    
+                    const aiResult = await unifiedAIManager.processImage(currentImageData, aiStyle, aiOptions);
+                    
+                    if (aiResult && aiResult.success) {
+                        console.log('✅ AI processing successful:', aiResult.method || aiResult.engine);
+                        result = aiResult.imageData;
+                        
+                        // Show AI processing info if fallback was used
+                        if (aiResult.usedFallback) {
+                            console.log('ℹ️ AI fallback used:', aiResult.originalStyle, '→', aiResult.method);
+                        }
+                    } else {
+                        throw new Error('AI processing failed or returned invalid result');
+                    }
+                    
+                } catch (aiError) {
+                    console.warn('⚠️ AI processing failed, falling back to traditional:', aiError.message);
+                    result = await traditionalProcessing();
+                }
+            } else {
+                console.log('🖊️ Using traditional processing (AI not available or disabled)');
+                result = await traditionalProcessing();
+            }
             
             // Display result
-            imageProcessor.drawResult(result);
-            
-            // Enable download button
-            downloadBtn.disabled = false;
+            if (result) {
+                if (result instanceof ImageData) {
+                    imageProcessor.drawResult(result);
+                } else if (result.data) {
+                    // Handle different result formats
+                    const resultCtx = resultCanvas.getContext('2d');
+                    resultCtx.putImageData(result.data, 0, 0);
+                } else {
+                    console.warn('Unknown result format, attempting direct display');
+                    imageProcessor.drawResult(result);
+                }
+                
+                // Enable download button
+                downloadBtn.disabled = false;
+                console.log('✅ Image processing completed successfully');
+            } else {
+                throw new Error('Processing returned no result');
+            }
             
         } catch (error) {
-            console.error('Error processing image:', error);
+            console.error('❌ Error processing image:', error);
             alert('Failed to process image. Please try adjusting the settings.');
         } finally {
             isProcessing = false;
@@ -643,6 +711,34 @@ async function processImage() {
             processingOverlay.style.display = 'none';
         }
     }, 100);
+}
+
+// Traditional processing fallback function
+async function traditionalProcessing() {
+    console.log('🖊️ Executing traditional processing pipeline');
+    
+    // Convert to grayscale
+    const grayscaleData = imageProcessor.toGrayscale(currentImageData);
+    
+    // Apply slight blur for noise reduction
+    const blurredData = imageProcessor.gaussianBlur(grayscaleData, 1);
+    
+    // Detect edges
+    const edges = edgeDetector ? edgeDetector.detectArchitecturalEdges(blurredData, {
+        threshold: parseInt(edgeThreshold.value),
+        blur: true,
+        thinning: true
+    }) : blurredData;
+    
+    // Apply hand-drawn effect
+    const result = handDrawnEffects ? await handDrawnEffects.applyHandDrawnEffect(edges, {
+        style: stylePreset.value,
+        lineVariation: parseInt(lineVariation.value),
+        lineThickness: parseFloat(lineThickness.value),
+        texture: true
+    }) : edges;
+    
+    return result;
 }
 
 // Reset workspace
@@ -872,5 +968,61 @@ function showDownloadNotification(message) {
     }, 3000);
 }
 
+// Display AI capabilities status
+function displayAICapabilities() {
+    if (unifiedAIManager && unifiedAIManager.isInitialized) {
+        const status = unifiedAIManager.getSystemStatus();
+        const processingModeSelect = document.getElementById('processingMode');
+        
+        console.log('🤖 AI Capabilities Available:');
+        console.log('  Current Engine:', status.currentEngine);
+        console.log('  Available Engines:', status.availableEngines.join(', '));
+        console.log('  WebGPU Support:', status.capabilities?.hasWebGPU ? '✅' : '❌');
+        console.log('  WebGL Support:', status.capabilities?.hasWebGL ? '✅' : '❌');
+        
+        // Update processing mode options based on available engines
+        if (processingModeSelect) {
+            // Enable local AI option if engines are available
+            const localOption = processingModeSelect.querySelector('option[value="local"]');
+            if (localOption && status.availableEngines.length > 1) {
+                localOption.disabled = false;
+                localOption.textContent = `Local AI (${status.currentEngine})`;
+            }
+            
+            // Set default to local AI if available
+            if (status.availableEngines.includes('onnx') || status.availableEngines.includes('transformers')) {
+                processingModeSelect.value = 'local';
+            }
+        }
+        
+        // Add AI status indicator to header
+        const header = document.querySelector('header p');
+        if (header && !header.querySelector('.ai-status')) {
+            const aiStatus = document.createElement('span');
+            aiStatus.className = 'ai-status';
+            aiStatus.innerHTML = ` <span style="color: #4CAF50;">🧠 AI Ready (${status.currentEngine.toUpperCase()})</span>`;
+            header.appendChild(aiStatus);
+        }
+    } else {
+        console.log('🔋 Traditional processing only (AI not available)');
+        
+        // Disable AI options
+        const processingModeSelect = document.getElementById('processingMode');
+        if (processingModeSelect) {
+            const localOption = processingModeSelect.querySelector('option[value="local"]');
+            if (localOption) {
+                localOption.disabled = true;
+                localOption.textContent = 'Local AI (Not Available)';
+            }
+        }
+    }
+}
+
 // Initialize app when DOM is ready
-document.addEventListener('DOMContentLoaded', init);
+document.addEventListener('DOMContentLoaded', async () => {
+    try {
+        await init();
+    } catch (error) {
+        console.error('Application initialization failed:', error);
+    }
+});
