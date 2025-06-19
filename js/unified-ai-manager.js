@@ -45,6 +45,8 @@ class UnifiedAIManager {
             'ai_technical': { engine: 'onnx', fallback: 'technical', description: 'Precise AI technical drawing' },
             'ai_depth_aware': { engine: 'transformers', fallback: 'pencil', description: 'Depth-aware sketch conversion' },
             'ai_edge_enhanced': { engine: 'onnx', fallback: 'pen', description: 'Enhanced edge detection' },
+            'ai_lightweight_edges': { engine: 'onnx', fallback: 'pen', description: 'Fast lightweight edge detection' },
+            'ai_architectural_edges': { engine: 'onnx', fallback: 'technical', description: 'Building-optimized edge detection' },
             
             // Interior design specific
             'interior_presentation': { engine: 'auto', fallback: 'pen', description: 'Professional interior presentation' },
@@ -344,11 +346,14 @@ class UnifiedAIManager {
             'ai_sketch': 'sketch_transfer',
             'ai_technical': 'edge_detection',
             'ai_edge_enhanced': 'edge_detection',
-            'interior_presentation': 'sketch_transfer',
-            'architectural_lines': 'edge_detection'
+            'ai_lightweight_edges': 'edge_detection',
+            'ai_architectural_edges': 'architectural_edges',
+            'interior_presentation': 'interior_sketch',
+            'architectural_lines': 'architectural_edges',
+            'furniture_focus': 'interior_sketch'
         };
         
-        return mapping[style] || 'sketch_transfer';
+        return mapping[style] || 'edge_detection';
     }
 
     /**
@@ -540,6 +545,153 @@ class UnifiedAIManager {
             'Device Memory': `${status.capabilities?.deviceMemory}GB`,
             'Mobile': status.capabilities?.isMobile ? '✅' : '❌'
         });
+    }
+    
+    /**
+     * Demonstrate edge detection capabilities with multiple models
+     */
+    async demoEdgeDetection(imageData) {
+        console.log('🖼️ Starting edge detection demo...');
+        
+        const edgeStyles = [
+            'ai_lightweight_edges',
+            'ai_architectural_edges', 
+            'ai_edge_enhanced'
+        ];
+        
+        const results = {
+            original: imageData,
+            timestamp: new Date().toISOString(),
+            models: {},
+            performance: {
+                fastest: null,
+                slowest: null,
+                average: 0
+            }
+        };
+        
+        const times = [];
+        
+        for (const style of edgeStyles) {
+            try {
+                console.log(`🔍 Testing ${style}...`);
+                const startTime = performance.now();
+                
+                const result = await this.processImage(imageData, style, {
+                    quality: 'auto',
+                    timeout: 30000
+                });
+                
+                const processingTime = performance.now() - startTime;
+                times.push(processingTime);
+                
+                results.models[style] = {
+                    success: result.success || false,
+                    processingTime,
+                    engine: result.engine || 'unknown',
+                    usedFallback: result.usedFallback || false,
+                    imageData: result.imageData || null
+                };
+                
+                console.log(`✅ ${style}: ${processingTime.toFixed(2)}ms (${result.engine || 'fallback'})`);
+                
+            } catch (error) {
+                console.error(`❌ ${style} failed:`, error.message);
+                results.models[style] = {
+                    success: false,
+                    error: error.message,
+                    processingTime: 0
+                };
+            }
+        }
+        
+        // Calculate performance metrics
+        const successfulTimes = times.filter(t => t > 0);
+        if (successfulTimes.length > 0) {
+            results.performance.average = successfulTimes.reduce((a, b) => a + b, 0) / successfulTimes.length;
+            results.performance.fastest = Math.min(...successfulTimes);
+            results.performance.slowest = Math.max(...successfulTimes);
+        }
+        
+        console.log('🏁 Edge detection demo complete!');
+        console.log(`📊 Performance: Avg ${results.performance.average.toFixed(2)}ms`);
+        
+        return results;
+    }
+    
+    /**
+     * Test all available edge detection models for performance
+     */
+    async benchmarkEdgeDetection(imageData, iterations = 3) {
+        console.log(`🏃 Benchmarking edge detection (${iterations} iterations)...`);
+        
+        const onnxEngine = this.engines.get('onnx');
+        if (!onnxEngine || !onnxEngine.testEdgeDetection) {
+            console.warn('⚠️ ONNX engine not available for benchmarking');
+            return null;
+        }
+        
+        const benchmark = {
+            iterations,
+            timestamp: new Date().toISOString(),
+            device: {
+                userAgent: navigator.userAgent,
+                memory: navigator.deviceMemory || 'unknown',
+                cores: navigator.hardwareConcurrency || 'unknown'
+            },
+            results: {}
+        };
+        
+        for (let i = 0; i < iterations; i++) {
+            console.log(`🔄 Iteration ${i + 1}/${iterations}`);
+            
+            try {
+                const iterationResult = await onnxEngine.testEdgeDetection(imageData, {
+                    quality: 'auto'
+                });
+                
+                // Aggregate results
+                Object.keys(iterationResult).forEach(modelType => {
+                    if (!benchmark.results[modelType]) {
+                        benchmark.results[modelType] = {
+                            times: [],
+                            successes: 0,
+                            errors: []
+                        };
+                    }
+                    
+                    const result = iterationResult[modelType];
+                    if (result.success) {
+                        benchmark.results[modelType].times.push(result.processingTime);
+                        benchmark.results[modelType].successes++;
+                    } else {
+                        benchmark.results[modelType].errors.push(result.error);
+                    }
+                });
+                
+            } catch (error) {
+                console.error(`❌ Iteration ${i + 1} failed:`, error.message);
+            }
+        }
+        
+        // Calculate statistics
+        Object.keys(benchmark.results).forEach(modelType => {
+            const data = benchmark.results[modelType];
+            const times = data.times;
+            
+            if (times.length > 0) {
+                data.statistics = {
+                    average: times.reduce((a, b) => a + b, 0) / times.length,
+                    min: Math.min(...times),
+                    max: Math.max(...times),
+                    median: times.sort((a, b) => a - b)[Math.floor(times.length / 2)],
+                    successRate: (data.successes / iterations) * 100
+                };
+            }
+        });
+        
+        console.log('📊 Benchmark complete!');
+        return benchmark;
     }
 }
 

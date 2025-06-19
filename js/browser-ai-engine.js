@@ -21,28 +21,72 @@ class BrowserAIEngine {
         
         // Model configurations for different quality settings
         this.modelConfigs = {
+            // Lightweight edge detection models
             edge_detection: {
                 mobile: {
-                    url: 'https://huggingface.co/onnx-community/HED-edge-detection/resolve/main/model_quantized.onnx',
-                    size: '8MB',
-                    description: 'Lightweight edge detection for mobile devices'
+                    url: 'https://huggingface.co/onnx-community/pidinet/resolve/main/model_quantized.onnx',
+                    size: '3.2MB',
+                    description: 'Ultra-lightweight edge detection (PiDiNet)',
+                    inputSize: [512, 512],
+                    outputChannels: 1
                 },
                 desktop: {
                     url: 'https://huggingface.co/onnx-community/HED-edge-detection/resolve/main/model.onnx',
                     size: '25MB',
-                    description: 'High-quality edge detection for desktop'
+                    description: 'High-quality edge detection (HED)',
+                    inputSize: [512, 512],
+                    outputChannels: 1
                 }
             },
-            sketch_transfer: {
+            // Fast architectural edge detection
+            architectural_edges: {
                 mobile: {
-                    url: 'https://huggingface.co/onnx-community/sketch-to-image-controlnet/resolve/main/model_quantized.onnx',
-                    size: '45MB',
-                    description: 'Optimized sketch style transfer'
+                    url: 'https://huggingface.co/onnx-community/BDCN-edge-detection/resolve/main/model_mobile.onnx',
+                    size: '5.1MB',
+                    description: 'Architectural edge detection optimized for buildings',
+                    inputSize: [512, 512],
+                    outputChannels: 1
                 },
                 desktop: {
-                    url: 'https://huggingface.co/onnx-community/sketch-to-image-controlnet/resolve/main/model.onnx',
-                    size: '120MB',
-                    description: 'Full-quality sketch style transfer'
+                    url: 'https://huggingface.co/onnx-community/BDCN-edge-detection/resolve/main/model.onnx',
+                    size: '38MB',
+                    description: 'High-precision architectural edge detection',
+                    inputSize: [512, 512],
+                    outputChannels: 1
+                }
+            },
+            // Sketch style transfer models
+            sketch_transfer: {
+                mobile: {
+                    url: 'https://huggingface.co/onnx-community/sketch-style-transfer-lite/resolve/main/model.onnx',
+                    size: '12MB',
+                    description: 'Lightweight sketch style transfer',
+                    inputSize: [256, 256],
+                    outputChannels: 3
+                },
+                desktop: {
+                    url: 'https://huggingface.co/onnx-community/sketch-style-transfer/resolve/main/model.onnx',
+                    size: '45MB',
+                    description: 'High-quality sketch style transfer',
+                    inputSize: [512, 512],
+                    outputChannels: 3
+                }
+            },
+            // Interior-specific models
+            interior_sketch: {
+                mobile: {
+                    url: 'https://huggingface.co/onnx-community/interior-sketch-lite/resolve/main/model.onnx',
+                    size: '8.7MB',
+                    description: 'Interior design sketch conversion',
+                    inputSize: [256, 256],
+                    outputChannels: 3
+                },
+                desktop: {
+                    url: 'https://huggingface.co/onnx-community/interior-sketch-hd/resolve/main/model.onnx',
+                    size: '67MB',
+                    description: 'High-definition interior sketch conversion',
+                    inputSize: [512, 512],
+                    outputChannels: 3
                 }
             }
         };
@@ -326,14 +370,14 @@ class BrowserAIEngine {
             // Load model if not already loaded
             const session = await this.loadModel(modelType, options.quality);
             
-            // Prepare input tensor
-            const inputTensor = await this.prepareInputTensor(imageData, session);
+            // Prepare input tensor with model type information
+            const inputTensor = await this.prepareInputTensor(imageData, session, modelType);
             
             // Run inference
             const outputs = await session.run({ input: inputTensor });
             
-            // Process output
-            const result = await this.processOutput(outputs, imageData.width, imageData.height);
+            // Process output with model type information
+            const result = await this.processOutput(outputs, imageData.width, imageData.height, modelType);
             
             const inferenceTime = performance.now() - startTime;
             this.metrics.inferenceTimes.set(modelType, inferenceTime);
@@ -359,34 +403,93 @@ class BrowserAIEngine {
     }
 
     /**
-     * Prepare image data as input tensor
+     * Prepare image data as input tensor with model-specific preprocessing
      */
-    async prepareInputTensor(imageData, session) {
+    async prepareInputTensor(imageData, session, modelType) {
         // Get input info from model
         const inputNames = session.inputNames;
         const inputInfo = session.inputs[inputNames[0]];
         
-        // Typically models expect NCHW format (batch, channels, height, width)
-        const [, channels, height, width] = inputInfo.dims;
+        // Get model configuration for preprocessing
+        const qualityLevel = this.getQualityLevel();
+        const modelConfig = this.modelConfigs[modelType]?.[qualityLevel];
         
-        // Resize image if needed
-        const resizedImageData = this.resizeImage(imageData, width, height);
+        let targetWidth, targetHeight, channels;
         
-        // Convert to tensor format
-        const tensorData = new Float32Array(channels * height * width);
-        const pixels = resizedImageData.data;
-        
-        // Convert RGBA to RGB and normalize to [0, 1] or [-1, 1]
-        for (let i = 0; i < height * width; i++) {
-            const pixelIndex = i * 4;
-            
-            // Normalize to [0, 1] and rearrange to CHW format
-            tensorData[i] = pixels[pixelIndex] / 255.0;           // R
-            tensorData[height * width + i] = pixels[pixelIndex + 1] / 255.0;     // G
-            tensorData[height * width * 2 + i] = pixels[pixelIndex + 2] / 255.0; // B
+        if (modelConfig && modelConfig.inputSize) {
+            [targetWidth, targetHeight] = modelConfig.inputSize;
+            channels = inputInfo.dims[1]; // Assume NCHW format
+        } else {
+            // Fallback to input info from model
+            const [, c, h, w] = inputInfo.dims;
+            channels = c;
+            targetHeight = h;
+            targetWidth = w;
         }
         
-        return new ort.Tensor('float32', tensorData, [1, channels, height, width]);
+        console.log(`📐 Preparing tensor: ${targetWidth}x${targetHeight}, ${channels} channels`);
+        
+        // Resize image if needed
+        const resizedImageData = this.resizeImage(imageData, targetWidth, targetHeight);
+        
+        // Convert to tensor format with model-specific preprocessing
+        const tensorData = new Float32Array(channels * targetHeight * targetWidth);
+        const pixels = resizedImageData.data;
+        
+        if (channels === 1) {
+            // Grayscale models (edge detection)
+            for (let i = 0; i < targetHeight * targetWidth; i++) {
+                const pixelIndex = i * 4;
+                // Convert to grayscale and normalize to [0, 1]
+                const gray = (pixels[pixelIndex] * 0.299 + pixels[pixelIndex + 1] * 0.587 + pixels[pixelIndex + 2] * 0.114) / 255.0;
+                tensorData[i] = gray;
+            }
+        } else if (channels === 3) {
+            // RGB models (style transfer)
+            for (let i = 0; i < targetHeight * targetWidth; i++) {
+                const pixelIndex = i * 4;
+                
+                // Apply model-specific normalization
+                const normalizationType = this.getNormalizationType(modelType);
+                let r, g, b;
+                
+                if (normalizationType === 'imagenet') {
+                    // ImageNet normalization: mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]
+                    r = (pixels[pixelIndex] / 255.0 - 0.485) / 0.229;
+                    g = (pixels[pixelIndex + 1] / 255.0 - 0.456) / 0.224;
+                    b = (pixels[pixelIndex + 2] / 255.0 - 0.406) / 0.225;
+                } else {
+                    // Standard [0, 1] normalization
+                    r = pixels[pixelIndex] / 255.0;
+                    g = pixels[pixelIndex + 1] / 255.0;
+                    b = pixels[pixelIndex + 2] / 255.0;
+                }
+                
+                // Rearrange to CHW format
+                tensorData[i] = r;                                           // R channel
+                tensorData[targetHeight * targetWidth + i] = g;             // G channel
+                tensorData[targetHeight * targetWidth * 2 + i] = b;         // B channel
+            }
+        }
+        
+        return new ort.Tensor('float32', tensorData, [1, channels, targetHeight, targetWidth]);
+    }
+    
+    /**
+     * Get quality level based on device capabilities
+     */
+    getQualityLevel() {
+        const isMobile = /Mobi|Android/i.test(navigator.userAgent);
+        const hasHighMemory = navigator.deviceMemory >= 4;
+        return (isMobile || !hasHighMemory) ? 'mobile' : 'desktop';
+    }
+    
+    /**
+     * Get normalization type for specific model types
+     */
+    getNormalizationType(modelType) {
+        const imageNetModels = ['sketch_transfer', 'interior_sketch'];
+        return imageNetModels.includes(modelType) ? 'imagenet' : 'standard';
     }
 
     /**
@@ -412,15 +515,17 @@ class BrowserAIEngine {
     }
 
     /**
-     * Process model output back to image data
+     * Process model output back to image data with format-specific handling
      */
-    async processOutput(outputs, originalWidth, originalHeight) {
+    async processOutput(outputs, originalWidth, originalHeight, modelType = 'edge_detection') {
         const outputNames = Object.keys(outputs);
         const outputTensor = outputs[outputNames[0]];
         
-        // Typically output is in CHW format
+        // Handle different output formats
         const [, channels, height, width] = outputTensor.dims;
         const data = outputTensor.data;
+        
+        console.log(`📤 Processing output: ${width}x${height}, ${channels} channels`);
         
         // Create canvas for output
         const canvas = document.createElement('canvas');
@@ -431,18 +536,51 @@ class BrowserAIEngine {
         const imageData = ctx.createImageData(width, height);
         const pixels = imageData.data;
         
-        // Convert from CHW to RGBA
-        for (let i = 0; i < height * width; i++) {
-            const pixelIndex = i * 4;
+        if (channels === 1) {
+            // Single channel output (edge detection)
+            for (let i = 0; i < height * width; i++) {
+                const pixelIndex = i * 4;
+                const value = Math.round(Math.max(0, Math.min(1, data[i])) * 255);
+                
+                pixels[pixelIndex] = value;     // R
+                pixels[pixelIndex + 1] = value; // G
+                pixels[pixelIndex + 2] = value; // B
+                pixels[pixelIndex + 3] = 255;   // A
+            }
+        } else if (channels === 3) {
+            // RGB output (style transfer)
+            const normalizationType = this.getNormalizationType(modelType);
             
-            // Denormalize from [0, 1] to [0, 255]
-            pixels[pixelIndex] = Math.round(data[i] * 255);                    // R
-            pixels[pixelIndex + 1] = Math.round(data[height * width + i] * 255);       // G
-            pixels[pixelIndex + 2] = Math.round(data[height * width * 2 + i] * 255);   // B
-            pixels[pixelIndex + 3] = 255;                                      // A
+            for (let i = 0; i < height * width; i++) {
+                const pixelIndex = i * 4;
+                
+                let r, g, b;
+                
+                if (normalizationType === 'imagenet') {
+                    // Denormalize from ImageNet format
+                    r = Math.round(Math.max(0, Math.min(1, (data[i] * 0.229 + 0.485))) * 255);
+                    g = Math.round(Math.max(0, Math.min(1, (data[height * width + i] * 0.224 + 0.456))) * 255);
+                    b = Math.round(Math.max(0, Math.min(1, (data[height * width * 2 + i] * 0.225 + 0.406))) * 255);
+                } else {
+                    // Standard denormalization
+                    r = Math.round(Math.max(0, Math.min(1, data[i])) * 255);
+                    g = Math.round(Math.max(0, Math.min(1, data[height * width + i])) * 255);
+                    b = Math.round(Math.max(0, Math.min(1, data[height * width * 2 + i])) * 255);
+                }
+                
+                pixels[pixelIndex] = r;         // R
+                pixels[pixelIndex + 1] = g;     // G
+                pixels[pixelIndex + 2] = b;     // B
+                pixels[pixelIndex + 3] = 255;   // A
+            }
         }
         
         ctx.putImageData(imageData, 0, 0);
+        
+        // Apply post-processing for edge detection
+        if (modelType.includes('edge')) {
+            this.applyEdgePostProcessing(ctx, width, height);
+        }
         
         // Resize back to original dimensions if needed
         if (width !== originalWidth || height !== originalHeight) {
@@ -450,11 +588,41 @@ class BrowserAIEngine {
             const finalCtx = finalCanvas.getContext('2d');
             finalCanvas.width = originalWidth;
             finalCanvas.height = originalHeight;
+            
+            // Use high-quality scaling for upscaling
+            finalCtx.imageSmoothingEnabled = true;
+            finalCtx.imageSmoothingQuality = 'high';
             finalCtx.drawImage(canvas, 0, 0, originalWidth, originalHeight);
+            
             return finalCtx.getImageData(0, 0, originalWidth, originalHeight);
         }
         
-        return imageData;
+        return ctx.getImageData(0, 0, width, height);
+    }
+    
+    /**
+     * Apply post-processing for edge detection results
+     */
+    applyEdgePostProcessing(ctx, width, height) {
+        // Apply contrast enhancement and noise reduction for edge detection
+        const imageData = ctx.getImageData(0, 0, width, height);
+        const pixels = imageData.data;
+        
+        // Apply threshold and contrast enhancement
+        for (let i = 0; i < pixels.length; i += 4) {
+            const gray = pixels[i]; // Since R=G=B for grayscale
+            
+            // Apply adaptive threshold
+            const threshold = 127;
+            const enhanced = gray > threshold ? Math.min(255, gray * 1.2) : Math.max(0, gray * 0.8);
+            
+            pixels[i] = enhanced;     // R
+            pixels[i + 1] = enhanced; // G
+            pixels[i + 2] = enhanced; // B
+            // Alpha stays 255
+        }
+        
+        ctx.putImageData(imageData, 0, 0);
     }
 
     /**
@@ -532,6 +700,63 @@ class BrowserAIEngine {
      */
     setProgressCallback(callback) {
         this.onModelLoadProgress = callback;
+    }
+    
+    /**
+     * Test edge detection models with performance comparison
+     */
+    async testEdgeDetection(imageData, options = {}) {
+        console.log('📊 Testing edge detection models...');
+        
+        const models = ['edge_detection', 'architectural_edges'];
+        const results = {};
+        
+        for (const modelType of models) {
+            try {
+                console.log(`🔍 Testing ${modelType}...`);
+                const startTime = performance.now();
+                
+                const result = await this.processImage(imageData, modelType, {
+                    quality: options.quality || 'auto'
+                });
+                
+                const processingTime = performance.now() - startTime;
+                
+                results[modelType] = {
+                    success: result.success,
+                    processingTime,
+                    backend: result.backend,
+                    imageData: result.imageData
+                };
+                
+                console.log(`✅ ${modelType}: ${processingTime.toFixed(2)}ms`);
+                
+            } catch (error) {
+                console.error(`❌ ${modelType} failed:`, error.message);
+                results[modelType] = {
+                    success: false,
+                    error: error.message
+                };
+            }
+        }
+        
+        // Performance summary
+        const successful = Object.values(results).filter(r => r.success);
+        if (successful.length > 0) {
+            const avgTime = successful.reduce((sum, r) => sum + r.processingTime, 0) / successful.length;
+            console.log(`📊 Average processing time: ${avgTime.toFixed(2)}ms`);
+        }
+        
+        return results;
+    }
+    
+    /**
+     * Get model description for UI display
+     */
+    getModelDescription(modelType) {
+        const qualityLevel = this.getQualityLevel();
+        const config = this.modelConfigs[modelType]?.[qualityLevel];
+        return config ? config.description : `${modelType} model`;
     }
 }
 

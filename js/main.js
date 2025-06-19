@@ -968,6 +968,41 @@ function showDownloadNotification(message) {
     }, 3000);
 }
 
+// Demo functions for testing AI edge detection
+window.demoEdgeDetection = async function() {
+    if (!currentImageData) {
+        console.warn('⚠️ Please load an image first');
+        return;
+    }
+    
+    if (!unifiedAIManager || !unifiedAIManager.isInitialized) {
+        console.warn('⚠️ AI Manager not available');
+        return;
+    }
+    
+    console.log('🚀 Starting edge detection demo...');
+    const results = await unifiedAIManager.demoEdgeDetection(currentImageData);
+    console.log('🏆 Demo results:', results);
+    return results;
+};
+
+window.benchmarkEdgeDetection = async function(iterations = 3) {
+    if (!currentImageData) {
+        console.warn('⚠️ Please load an image first');
+        return;
+    }
+    
+    if (!unifiedAIManager || !unifiedAIManager.isInitialized) {
+        console.warn('⚠️ AI Manager not available');
+        return;
+    }
+    
+    console.log(`🏃 Starting edge detection benchmark (${iterations} iterations)...`);
+    const results = await unifiedAIManager.benchmarkEdgeDetection(currentImageData, iterations);
+    console.log('📊 Benchmark results:', results);
+    return results;
+};
+
 // Display AI capabilities status
 function displayAICapabilities() {
     if (unifiedAIManager && unifiedAIManager.isInitialized) {
@@ -1003,8 +1038,16 @@ function displayAICapabilities() {
             aiStatus.innerHTML = ` <span style="color: #4CAF50;">🧠 AI Ready (${status.currentEngine.toUpperCase()})</span>`;
             header.appendChild(aiStatus);
         }
+        
+        // Log testing information
+        console.log('🧠 AI Edge Detection Ready!');
+        console.log('Available test functions:');
+        console.log('  demoEdgeDetection() - Test multiple edge detection models');
+        console.log('  benchmarkEdgeDetection(3) - Performance benchmark with 3 iterations');
+        console.log('Load an image and try: demoEdgeDetection()');
     } else {
         console.log('🔋 Traditional processing only (AI not available)');
+        console.log('AI models could not be loaded. Falling back to traditional edge detection.');
         
         // Disable AI options
         const processingModeSelect = document.getElementById('processingMode');
