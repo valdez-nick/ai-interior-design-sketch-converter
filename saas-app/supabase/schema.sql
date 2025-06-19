@@ -114,3 +114,13 @@ CREATE TRIGGER update_projects_updated_at BEFORE UPDATE ON projects
 
 CREATE TRIGGER update_renders_updated_at BEFORE UPDATE ON renders
   FOR EACH ROW EXECUTE PROCEDURE update_updated_at_column();
+
+-- Create function to decrement credits
+CREATE OR REPLACE FUNCTION decrement_credits(user_id UUID)
+RETURNS void AS $$
+BEGIN
+  UPDATE profiles 
+  SET credits_remaining = GREATEST(0, credits_remaining - 1)
+  WHERE id = user_id;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
