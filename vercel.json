@@ -46,6 +46,5 @@
       "runtime": "nodejs18.x",
       "maxDuration": 30
     }
-  },
-  "regions": ["iad1", "sfo1"]
+  }
 }
