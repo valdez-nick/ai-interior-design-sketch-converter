@@ -1,6 +1,4 @@
 {
-  "version": 2,
-  "name": "ai-interior-design-sketch-converter",
   "headers": [
     {
       "source": "/(.*)",
@@ -16,10 +14,6 @@
         {
           "key": "X-XSS-Protection",
           "value": "1; mode=block"
-        },
-        {
-          "key": "Referrer-Policy",
-          "value": "strict-origin-when-cross-origin"
         }
       ]
     },
@@ -40,11 +34,5 @@
         }
       ]
     }
-  ],
-  "functions": {
-    "api/**/*.js": {
-      "runtime": "nodejs18.x",
-      "maxDuration": 30
-    }
-  }
+  ]
 }
