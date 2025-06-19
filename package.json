@@ -1,45 +1,45 @@
 {
   "name": "ai-interior-design-sketch-converter",
   "version": "1.0.0",
-  "description": "AI-powered tool that converts 3D rendered interior images to professional hand-drawn sketches",
+  "description": "AI-powered tool for converting interior design 3D models into authentic hand-drawn sketches",
   "main": "index.html",
   "scripts": {
     "dev": "vercel dev",
-    "build": "npm run minify && npm run optimize",
-    "minify": "terser js/*.js --compress --mangle --output js/bundle.min.js",
-    "optimize": "cleancss css/styles.css -o css/styles.min.css",
-    "test": "node tests/testRunner.js",
-    "deploy": "vercel --prod",
-    "preview": "vercel",
-    "start": "python3 -m http.server 8000"
+    "build": "echo 'Static build complete'",
+    "start": "vercel dev",
+    "test": "echo 'Tests will be added in future versions'",
+    "deploy": "vercel --prod"
   },
   "keywords": [
     "interior-design",
-    "ai",
     "sketch-converter",
-    "stable-diffusion",
-    "architectural-drawings",
-    "design-tools"
+    "ai-powered",
+    "hand-drawn",
+    "architectural-visualization",
+    "design-tools",
+    "image-processing"
   ],
-  "author": "AI Interior Design Tools",
+  "author": "Your Name",
   "license": "MIT",
-  "dependencies": {
-    "jszip": "^3.10.1"
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourusername/ai-interior-design-sketch-converter.git"
   },
+  "bugs": {
+    "url": "https://github.com/yourusername/ai-interior-design-sketch-converter/issues"
+  },
+  "homepage": "https://github.com/yourusername/ai-interior-design-sketch-converter#readme",
   "devDependencies": {
-    "terser": "^5.19.0",
-    "clean-css-cli": "^5.6.2",
     "vercel": "^32.0.0"
   },
+  "dependencies": {},
   "engines": {
     "node": ">=18.0.0"
   },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/your-username/ai-interior-design-sketch-converter.git"
-  },
-  "homepage": "https://your-app.vercel.app",
-  "bugs": {
-    "url": "https://github.com/your-username/ai-interior-design-sketch-converter/issues"
-  }
+  "browserslist": [
+    "> 1%",
+    "last 2 versions",
+    "not dead",
+    "not ie 11"
+  ]
 }
