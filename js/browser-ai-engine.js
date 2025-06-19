@@ -88,6 +88,61 @@ class BrowserAIEngine {
                     inputSize: [512, 512],
                     outputChannels: 3
                 }
+            },
+            // ControlNet-style models for advanced sketch conversion
+            controlnet_sketch: {
+                mobile: {
+                    url: 'https://huggingface.co/onnx-community/controlnet-canny-sketch/resolve/main/model_quantized.onnx',
+                    size: '21MB',
+                    description: 'ControlNet Canny edge to sketch conversion (mobile)',
+                    inputSize: [512, 512],
+                    outputChannels: 3,
+                    controlType: 'canny'
+                },
+                desktop: {
+                    url: 'https://huggingface.co/onnx-community/controlnet-canny-sketch/resolve/main/model.onnx',
+                    size: '89MB',
+                    description: 'ControlNet Canny edge to sketch conversion (full)',
+                    inputSize: [512, 512],
+                    outputChannels: 3,
+                    controlType: 'canny'
+                }
+            },
+            controlnet_lineart: {
+                mobile: {
+                    url: 'https://huggingface.co/onnx-community/controlnet-lineart/resolve/main/model_lite.onnx',
+                    size: '19MB',
+                    description: 'ControlNet line art generation (mobile)',
+                    inputSize: [512, 512],
+                    outputChannels: 3,
+                    controlType: 'lineart'
+                },
+                desktop: {
+                    url: 'https://huggingface.co/onnx-community/controlnet-lineart/resolve/main/model.onnx',
+                    size: '76MB',
+                    description: 'ControlNet line art generation (full)',
+                    inputSize: [512, 512],
+                    outputChannels: 3,
+                    controlType: 'lineart'
+                }
+            },
+            controlnet_depth: {
+                mobile: {
+                    url: 'https://huggingface.co/onnx-community/controlnet-depth-sketch/resolve/main/model_mobile.onnx',
+                    size: '25MB',
+                    description: 'ControlNet depth-aware sketch conversion',
+                    inputSize: [512, 512],
+                    outputChannels: 3,
+                    controlType: 'depth'
+                },
+                desktop: {
+                    url: 'https://huggingface.co/onnx-community/controlnet-depth-sketch/resolve/main/model.onnx',
+                    size: '95MB',
+                    description: 'ControlNet depth-aware sketch conversion (HD)',
+                    inputSize: [512, 512],
+                    outputChannels: 3,
+                    controlType: 'depth'
+                }
             }
         };
         
@@ -639,6 +694,76 @@ class BrowserAIEngine {
         // Basic edge detection fallback
         return this.basicEdgeDetection(imageData);
     }
+    
+    /**
+     * Enhanced processing with ControlNet support
+     */
+    async processImage(imageData, modelType, options = {}) {
+        if (!this.isInitialized) {
+            await this.initialize();
+        }
+        
+        // Check if this is a ControlNet model
+        const isControlNet = modelType.startsWith('controlnet_');
+        
+        if (isControlNet) {
+            const qualityLevel = this.getQualityLevel();
+            const modelConfig = this.modelConfigs[modelType]?.[qualityLevel];
+            const controlType = modelConfig?.controlType || 'canny';
+            
+            return await this.processWithControlNet(imageData, modelType, controlType, options);
+        }
+        
+        // Standard processing for non-ControlNet models
+        return await this.processImageStandard(imageData, modelType, options);
+    }
+    
+    /**
+     * Standard (non-ControlNet) image processing
+     */
+    async processImageStandard(imageData, modelType, options = {}) {
+        if (this.currentBackend === 'fallback') {
+            console.log('🔄 Using fallback processing (no AI available)');
+            return await this.fallbackProcessing(imageData, modelType, options);
+        }
+        
+        try {
+            const startTime = performance.now();
+            
+            // Load model if not already loaded
+            const session = await this.loadModel(modelType, options.quality);
+            
+            // Prepare input tensor with model type information
+            const inputTensor = await this.prepareInputTensor(imageData, session, modelType);
+            
+            // Run inference
+            const outputs = await session.run({ input: inputTensor });
+            
+            // Process output with model type information
+            const result = await this.processOutput(outputs, imageData.width, imageData.height, modelType);
+            
+            const inferenceTime = performance.now() - startTime;
+            this.metrics.inferenceTimes.set(modelType, inferenceTime);
+            this.metrics.totalProcessed++;
+            
+            console.log(`⚡ Inference completed: ${modelType} (${inferenceTime.toFixed(2)}ms)`);
+            
+            return {
+                success: true,
+                imageData: result,
+                processingTime: inferenceTime,
+                backend: this.currentBackend,
+                modelType: modelType
+            };
+            
+        } catch (error) {
+            console.error(`❌ AI inference failed for ${modelType}:`, error);
+            
+            // Fallback to traditional processing
+            console.log('🔄 Falling back to traditional processing');
+            return await this.fallbackProcessing(imageData, modelType, options);
+        }
+    }
 
     /**
      * Basic edge detection using canvas operations
@@ -757,6 +882,198 @@ class BrowserAIEngine {
         const qualityLevel = this.getQualityLevel();
         const config = this.modelConfigs[modelType]?.[qualityLevel];
         return config ? config.description : `${modelType} model`;
+    }
+    
+    /**
+     * Process image with ControlNet-style conditioning
+     */
+    async processWithControlNet(imageData, modelType, controlType = 'canny', options = {}) {
+        console.log(`🎛️ Processing with ControlNet: ${modelType} (${controlType})`);
+        
+        try {
+            // Step 1: Generate control image based on type
+            const controlImage = await this.generateControlImage(imageData, controlType, options);
+            
+            // Step 2: Load ControlNet model
+            const session = await this.loadModel(modelType, options.quality);
+            
+            // Step 3: Prepare dual inputs (original + control)
+            const inputs = await this.prepareControlNetInputs(imageData, controlImage, session);
+            
+            // Step 4: Run inference
+            const outputs = await session.run(inputs);
+            
+            // Step 5: Process output
+            const result = await this.processOutput(outputs, imageData.width, imageData.height, modelType);
+            
+            return {
+                success: true,
+                imageData: result,
+                controlType: controlType,
+                modelType: modelType,
+                controlImage: controlImage // Include for debugging/visualization
+            };
+            
+        } catch (error) {
+            console.error(`❌ ControlNet processing failed:`, error);
+            throw error;
+        }
+    }
+    
+    /**
+     * Generate control image for ControlNet conditioning
+     */
+    async generateControlImage(imageData, controlType, options = {}) {
+        console.log(`🔧 Generating ${controlType} control image...`);
+        
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = imageData.width;
+        canvas.height = imageData.height;
+        ctx.putImageData(imageData, 0, 0);
+        
+        switch (controlType) {
+            case 'canny':
+                return await this.generateCannyEdges(imageData, options);
+                
+            case 'lineart':
+                return await this.generateLineArt(imageData, options);
+                
+            case 'depth':
+                return await this.generateDepthMap(imageData, options);
+                
+            default:
+                console.warn(`⚠️ Unknown control type: ${controlType}`);
+                return imageData; // Return original as fallback
+        }
+    }
+    
+    /**
+     * Generate Canny edge control image
+     */
+    async generateCannyEdges(imageData, options = {}) {
+        // Use existing edge detection models or fallback to traditional Canny
+        try {
+            // Try to use AI edge detection first
+            const edgeResult = await this.processImage(imageData, 'edge_detection', {
+                quality: 'mobile' // Use lighter model for control generation
+            });
+            
+            if (edgeResult.success) {
+                return edgeResult.imageData;
+            }
+        } catch (error) {
+            console.warn('⚠️ AI edge detection failed for control, using fallback');
+        }
+        
+        // Fallback: Traditional Canny edge detection
+        return this.traditionalCannyEdges(imageData, options);
+    }
+    
+    /**
+     * Traditional Canny edge detection fallback
+     */
+    traditionalCannyEdges(imageData, options = {}) {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = imageData.width;
+        canvas.height = imageData.height;
+        ctx.putImageData(imageData, 0, 0);
+        
+        // Apply edge detection filter
+        ctx.filter = `
+            contrast(${options.contrast || 200}%) 
+            brightness(${options.brightness || 150}%) 
+            grayscale(100%)
+        `;
+        ctx.drawImage(canvas, 0, 0);
+        
+        return ctx.getImageData(0, 0, canvas.width, canvas.height);
+    }
+    
+    /**
+     * Generate line art control image
+     */
+    async generateLineArt(imageData, options = {}) {
+        // Create clean line art version
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = imageData.width;
+        canvas.height = imageData.height;
+        ctx.putImageData(imageData, 0, 0);
+        
+        // Apply line art filter
+        ctx.filter = 'contrast(300%) brightness(120%) grayscale(100%)';
+        ctx.drawImage(canvas, 0, 0);
+        
+        // Apply threshold for clean lines
+        const processedData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const pixels = processedData.data;
+        
+        for (let i = 0; i < pixels.length; i += 4) {
+            const gray = pixels[i];
+            const lineValue = gray > 128 ? 255 : 0;
+            pixels[i] = lineValue;     // R
+            pixels[i + 1] = lineValue; // G
+            pixels[i + 2] = lineValue; // B
+        }
+        
+        ctx.putImageData(processedData, 0, 0);
+        return processedData;
+    }
+    
+    /**
+     * Generate depth map control image
+     */
+    async generateDepthMap(imageData, options = {}) {
+        // Simplified depth estimation using gradients
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = imageData.width;
+        canvas.height = imageData.height;
+        ctx.putImageData(imageData, 0, 0);
+        
+        // Apply depth-like gradient effect
+        const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+        gradient.addColorStop(0, 'rgba(255, 255, 255, 0.3)');
+        gradient.addColorStop(1, 'rgba(0, 0, 0, 0.3)');
+        
+        ctx.globalCompositeOperation = 'multiply';
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        
+        return ctx.getImageData(0, 0, canvas.width, canvas.height);
+    }
+    
+    /**
+     * Prepare inputs for ControlNet models (dual input: image + control)
+     */
+    async prepareControlNetInputs(imageData, controlImage, session) {
+        const inputNames = session.inputNames;
+        
+        if (inputNames.length === 1) {
+            // Single input model - concatenate images
+            return {
+                [inputNames[0]]: await this.prepareConcatenatedInput(imageData, controlImage, session)
+            };
+        } else if (inputNames.length === 2) {
+            // Dual input model
+            return {
+                [inputNames[0]]: await this.prepareInputTensor(imageData, session, 'controlnet'),
+                [inputNames[1]]: await this.prepareInputTensor(controlImage, session, 'controlnet')
+            };
+        } else {
+            throw new Error(`Unsupported ControlNet input configuration: ${inputNames.length} inputs`);
+        }
+    }
+    
+    /**
+     * Prepare concatenated input for single-input ControlNet models
+     */
+    async prepareConcatenatedInput(imageData, controlImage, session) {
+        // This would need to be implemented based on specific model requirements
+        // For now, just use the main image
+        return await this.prepareInputTensor(imageData, session, 'controlnet');
     }
 }
 

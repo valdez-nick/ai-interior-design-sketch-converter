@@ -1003,6 +1003,61 @@ window.benchmarkEdgeDetection = async function(iterations = 3) {
     return results;
 };
 
+window.demoControlNet = async function() {
+    if (!currentImageData) {
+        console.warn('⚠️ Please load an image first');
+        return;
+    }
+    
+    if (!unifiedAIManager || !unifiedAIManager.isInitialized) {
+        console.warn('⚠️ AI Manager not available');
+        return;
+    }
+    
+    console.log('🎨 Starting ControlNet demo...');
+    
+    const controlNetStyles = [
+        'ai_controlnet_sketch',
+        'ai_controlnet_lineart',
+        'ai_controlnet_depth'
+    ];
+    
+    const results = {};
+    
+    for (const style of controlNetStyles) {
+        try {
+            console.log(`🖼️ Testing ${style}...`);
+            const startTime = performance.now();
+            
+            const result = await unifiedAIManager.processImage(currentImageData, style, {
+                quality: 'auto'
+            });
+            
+            const processingTime = performance.now() - startTime;
+            
+            results[style] = {
+                success: result.success || false,
+                processingTime,
+                engine: result.engine || 'unknown',
+                controlType: result.controlType || 'unknown',
+                usedFallback: result.usedFallback || false
+            };
+            
+            console.log(`✅ ${style}: ${processingTime.toFixed(2)}ms`);
+            
+        } catch (error) {
+            console.error(`❌ ${style} failed:`, error.message);
+            results[style] = {
+                success: false,
+                error: error.message
+            };
+        }
+    }
+    
+    console.log('🏆 ControlNet demo complete!', results);
+    return results;
+};
+
 // Display AI capabilities status
 function displayAICapabilities() {
     if (unifiedAIManager && unifiedAIManager.isInitialized) {
@@ -1040,11 +1095,12 @@ function displayAICapabilities() {
         }
         
         // Log testing information
-        console.log('🧠 AI Edge Detection Ready!');
+        console.log('🧠 AI Processing Ready!');
         console.log('Available test functions:');
         console.log('  demoEdgeDetection() - Test multiple edge detection models');
         console.log('  benchmarkEdgeDetection(3) - Performance benchmark with 3 iterations');
-        console.log('Load an image and try: demoEdgeDetection()');
+        console.log('  demoControlNet() - Test ControlNet-style sketch conversion');
+        console.log('Load an image and try: demoEdgeDetection() or demoControlNet()');
     } else {
         console.log('🔋 Traditional processing only (AI not available)');
         console.log('AI models could not be loaded. Falling back to traditional edge detection.');

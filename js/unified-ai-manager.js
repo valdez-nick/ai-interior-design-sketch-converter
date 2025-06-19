@@ -47,6 +47,9 @@ class UnifiedAIManager {
             'ai_edge_enhanced': { engine: 'onnx', fallback: 'pen', description: 'Enhanced edge detection' },
             'ai_lightweight_edges': { engine: 'onnx', fallback: 'pen', description: 'Fast lightweight edge detection' },
             'ai_architectural_edges': { engine: 'onnx', fallback: 'technical', description: 'Building-optimized edge detection' },
+            'ai_controlnet_sketch': { engine: 'onnx', fallback: 'pencil', description: 'ControlNet Canny to sketch conversion' },
+            'ai_controlnet_lineart': { engine: 'onnx', fallback: 'pen', description: 'ControlNet line art generation' },
+            'ai_controlnet_depth': { engine: 'onnx', fallback: 'charcoal', description: 'ControlNet depth-aware sketch' },
             
             // Interior design specific
             'interior_presentation': { engine: 'auto', fallback: 'pen', description: 'Professional interior presentation' },
@@ -348,6 +351,9 @@ class UnifiedAIManager {
             'ai_edge_enhanced': 'edge_detection',
             'ai_lightweight_edges': 'edge_detection',
             'ai_architectural_edges': 'architectural_edges',
+            'ai_controlnet_sketch': 'controlnet_sketch',
+            'ai_controlnet_lineart': 'controlnet_lineart',
+            'ai_controlnet_depth': 'controlnet_depth',
             'interior_presentation': 'interior_sketch',
             'architectural_lines': 'architectural_edges',
             'furniture_focus': 'interior_sketch'
