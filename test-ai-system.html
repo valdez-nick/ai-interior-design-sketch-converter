@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI System Test</title>
+    <style>
+        body {
+            font-family: monospace;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #1a1a1a;
+            color: #00ff00;
+        }
+        .test-result {
+            margin: 10px 0;
+            padding: 10px;
+            border-left: 3px solid #00ff00;
+            background: rgba(0, 255, 0, 0.1);
+        }
+        .test-fail {
+            border-left-color: #ff0000;
+            background: rgba(255, 0, 0, 0.1);
+            color: #ff0000;
+        }
+        .test-pass {
+            border-left-color: #00ff00;
+            background: rgba(0, 255, 0, 0.1);
+            color: #00ff00;
+        }
+        button {
+            background: #333;
+            color: #00ff00;
+            border: 1px solid #00ff00;
+            padding: 10px 20px;
+            margin: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background: rgba(0, 255, 0, 0.1);
+        }
+    </style>
+</head>
+<body>
+    <h1>🤖 AI System Test Console</h1>
+    <p>Testing the 2025 Browser AI System deployment...</p>
+    
+    <button onclick="runAllTests()">🚀 Run All Tests</button>
+    <button onclick="clearResults()">🗑️ Clear Results</button>
+    
+    <div id="results"></div>
+
+    <!-- Load AI System Scripts -->
+    <script src="js/progressive-enhancement.js"></script>
+    <script src="js/browser-ai-engine.js"></script>
+    <script src="js/transformers-ai-engine.js"></script>
+    <script src="js/unified-ai-manager.js"></script>
+
+    <script>
+        let testResults = [];
+        let progressiveEnhancement = null;
+        let unifiedAIManager = null;
+
+        function addResult(test, passed, message) {
+            testResults.push({ test, passed, message });
+            updateDisplay();
+        }
+
+        function updateDisplay() {
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = testResults.map(result => 
+                `<div class="test-result ${result.passed ? 'test-pass' : 'test-fail'}">
+                    ${result.passed ? '✅' : '❌'} ${result.test}: ${result.message}
+                </div>`
+            ).join('');
+        }
+
+        function clearResults() {
+            testResults = [];
+            updateDisplay();
+        }
+
+        async function runAllTests() {
+            clearResults();
+            
+            // Test 1: Script Loading
+            addResult('Script Loading', 
+                typeof ProgressiveEnhancementManager !== 'undefined' &&
+                typeof BrowserAIEngine !== 'undefined' &&
+                typeof TransformersAIEngine !== 'undefined' &&
+                typeof UnifiedAIManager !== 'undefined',
+                'All AI engine classes loaded successfully'
+            );
+
+            // Test 2: Progressive Enhancement Initialization
+            try {
+                progressiveEnhancement = new ProgressiveEnhancementManager();
+                await progressiveEnhancement.detectDeviceCapabilities();
+                progressiveEnhancement.assignPerformanceTier();
+                
+                const status = progressiveEnhancement.getSystemStatus();
+                addResult('Progressive Enhancement', true, 
+                    `Tier: ${status.tierName}, WebGPU: ${status.deviceCapabilities.webgpu ? 'Yes' : 'No'}, Memory: ${status.deviceCapabilities.memory}GB`
+                );
+            } catch (error) {
+                addResult('Progressive Enhancement', false, `Initialization failed: ${error.message}`);
+            }
+
+            // Test 3: Performance Benchmark
+            try {
+                const benchmark = await progressiveEnhancement.runPerformanceBenchmark();
+                const avgScore = progressiveEnhancement.performanceProfile.averageScore;
+                addResult('Performance Benchmark', true, 
+                    `Score: ${avgScore.toFixed(1)}/100 (${progressiveEnhancement.performanceProfile.classification})`
+                );
+            } catch (error) {
+                addResult('Performance Benchmark', false, `Benchmark failed: ${error.message}`);
+            }
+
+            // Test 4: Unified AI Manager
+            try {
+                unifiedAIManager = new UnifiedAIManager();
+                await unifiedAIManager.initialize();
+                
+                if (progressiveEnhancement) {
+                    progressiveEnhancement.applyAdaptiveOptimizations();
+                }
+                
+                const aiStatus = unifiedAIManager.getSystemStatus();
+                addResult('Unified AI Manager', true, 
+                    `Engine: ${aiStatus.currentEngine}, Engines: ${aiStatus.availableEngines.length}`
+                );
+            } catch (error) {
+                addResult('Unified AI Manager', false, `AI Manager failed: ${error.message}`);
+            }
+
+            // Test 5: Available Styles
+            try {
+                const styles = unifiedAIManager.getAvailableStyles();
+                const aiStyles = styles.filter(s => s.requiresAI);
+                addResult('AI Styles', true, 
+                    `${styles.length} total styles, ${aiStyles.length} AI-enhanced styles`
+                );
+            } catch (error) {
+                addResult('AI Styles', false, `Style enumeration failed: ${error.message}`);
+            }
+
+            // Test 6: Engine Capabilities
+            try {
+                const engines = ['onnx', 'transformers', 'traditional'];
+                const availableEngines = engines.filter(e => unifiedAIManager.engines.has(e));
+                
+                let capabilityDetails = [];
+                for (const engineName of availableEngines) {
+                    const engine = unifiedAIManager.engines.get(engineName);
+                    if (engine.getCapabilities) {
+                        const caps = engine.getCapabilities();
+                        capabilityDetails.push(`${engineName}: ${caps.isInitialized ? 'Ready' : 'Not Ready'}`);
+                    }
+                }
+                
+                addResult('Engine Capabilities', availableEngines.length > 0, 
+                    capabilityDetails.join(', ')
+                );
+            } catch (error) {
+                addResult('Engine Capabilities', false, `Capability check failed: ${error.message}`);
+            }
+
+            // Test 7: Model Configurations
+            try {
+                const onnxEngine = unifiedAIManager.engines.get('onnx');
+                if (onnxEngine && onnxEngine.modelConfigs) {
+                    const modelTypes = Object.keys(onnxEngine.modelConfigs);
+                    addResult('Model Configurations', true, 
+                        `${modelTypes.length} model types: ${modelTypes.slice(0, 3).join(', ')}...`
+                    );
+                } else {
+                    addResult('Model Configurations', false, 'ONNX engine or model configs not available');
+                }
+            } catch (error) {
+                addResult('Model Configurations', false, `Model config check failed: ${error.message}`);
+            }
+
+            // Test 8: Cache Management
+            try {
+                const onnxEngine = unifiedAIManager.engines.get('onnx');
+                if (onnxEngine && onnxEngine.getCacheStats) {
+                    const cacheStats = onnxEngine.getCacheStats();
+                    addResult('Cache Management', true, 
+                        `Cache: ${cacheStats.totalModels}/${cacheStats.maxModels} models, ${(cacheStats.utilizationPercent).toFixed(1)}% used`
+                    );
+                } else {
+                    addResult('Cache Management', false, 'Cache system not available');
+                }
+            } catch (error) {
+                addResult('Cache Management', false, `Cache test failed: ${error.message}`);
+            }
+
+            // Test Summary
+            const totalTests = testResults.length;
+            const passedTests = testResults.filter(r => r.passed).length;
+            const successRate = (passedTests / totalTests * 100).toFixed(1);
+            
+            addResult('SUMMARY', passedTests === totalTests, 
+                `${passedTests}/${totalTests} tests passed (${successRate}% success rate)`
+            );
+
+            console.log('🤖 AI System Test Complete');
+            console.log(`📊 Results: ${passedTests}/${totalTests} tests passed`);
+            
+            // Global test functions
+            if (unifiedAIManager) {
+                window.testAI = unifiedAIManager;
+                window.testPE = progressiveEnhancement;
+                console.log('🔧 Test objects available: testAI, testPE');
+            }
+        }
+
+        // Auto-run tests when page loads
+        window.addEventListener('load', () => {
+            setTimeout(runAllTests, 1000);
+        });
+    </script>
+</body>
+</html>
