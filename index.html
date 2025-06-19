@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI-Powered Architectural & Interior Design Converter</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>AI-Powered Architectural & Interior Design Converter</h1>
+            <p>Transform architectural drawings into hand-drawn style with AI-enhanced interior design features</p>
+        </header>
+
+        <main>
+            <section class="upload-section">
+                <div class="upload-area" id="uploadArea">
+                    <svg class="upload-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                        <polyline points="17 8 12 3 7 8"></polyline>
+                        <line x1="12" y1="3" x2="12" y2="15"></line>
+                    </svg>
+                    <p>Drop your architectural image here or click to browse</p>
+                    <input type="file" id="fileInput" accept="image/*" hidden>
+                </div>
+            </section>
+
+            <section class="workspace" id="workspace" style="display: none;">
+                <div class="controls-panel">
+                    <!-- AI Processing Configuration -->
+                    <div class="collapsible-section">
+                        <h3 class="section-header" data-toggle="ai-config">
+                            <span>AI Processing Configuration</span>
+                            <span class="toggle-icon">▼</span>
+                        </h3>
+                        <div class="section-content" id="ai-config">
+                            <div class="control-group">
+                                <label for="processingMode">AI Processing Mode</label>
+                                <select id="processingMode">
+                                    <option value="traditional">Traditional (No AI)</option>
+                                    <option value="cloud">Cloud AI</option>
+                                    <option value="local">Local AI</option>
+                                    <option value="hybrid">Hybrid Processing</option>
+                                </select>
+                            </div>
+
+                            <div class="control-group api-config" id="apiConfig" style="display: none;">
+                                <label for="apiKey">API Key</label>
+                                <input type="password" id="apiKey" placeholder="Enter your AI service API key">
+                                <button type="button" id="testApiBtn" class="test-btn">Test Connection</button>
+                                <div class="api-status" id="apiStatus"></div>
+                            </div>
+
+                            <div class="control-group">
+                                <label for="aiProvider">AI Provider</label>
+                                <select id="aiProvider">
+                                    <option value="openai">OpenAI</option>
+                                    <option value="anthropic">Anthropic</option>
+                                    <option value="google">Google AI</option>
+                                    <option value="local">Local Model</option>
+                                </select>
+                            </div>
+
+                            <div class="progress-container" id="aiProgressContainer" style="display: none;">
+                                <div class="progress-label">AI Processing Progress</div>
+                                <div class="progress-bar">
+                                    <div class="progress-fill" id="aiProgressFill"></div>
+                                </div>
+                                <div class="progress-text" id="aiProgressText">0%</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Style Configuration -->
+                    <div class="collapsible-section">
+                        <h3 class="section-header" data-toggle="style-config">
+                            <span>Style Configuration</span>
+                            <span class="toggle-icon">▼</span>
+                        </h3>
+                        <div class="section-content" id="style-config">
+                            <div class="control-group">
+                                <label for="stylePreset">Style Preset</label>
+                                <select id="stylePreset">
+                                    <optgroup label="Traditional Drawing">
+                                        <option value="pencil">Pencil Sketch</option>
+                                        <option value="pen">Pen Drawing</option>
+                                        <option value="charcoal">Charcoal</option>
+                                        <option value="technical">Technical Pen</option>
+                                    </optgroup>
+                                    <optgroup label="Interior Design Styles">
+                                        <option value="modern">Modern Minimalist</option>
+                                        <option value="scandinavian">Scandinavian</option>
+                                        <option value="industrial">Industrial</option>
+                                        <option value="bohemian">Bohemian</option>
+                                        <option value="traditional">Traditional</option>
+                                        <option value="contemporary">Contemporary</option>
+                                        <option value="rustic">Rustic</option>
+                                        <option value="artdeco">Art Deco</option>
+                                    </optgroup>
+                                </select>
+                            </div>
+
+                            <div class="preset-actions">
+                                <button id="savePresetBtn" class="secondary-btn">Save Preset</button>
+                                <button id="loadPresetBtn" class="secondary-btn">Load Preset</button>
+                                <button id="exportPresetBtn" class="secondary-btn">Export</button>
+                                <button id="importPresetBtn" class="secondary-btn">Import</button>
+                                <input type="file" id="presetFileInput" accept=".json" hidden>
+                            </div>
+
+                            <div class="control-group">
+                                <label for="edgeThreshold">Edge Detection Sensitivity</label>
+                                <input type="range" id="edgeThreshold" min="10" max="100" value="30">
+                                <span class="value-display">30</span>
+                            </div>
+
+                            <div class="control-group">
+                                <label for="lineVariation">Line Variation</label>
+                                <input type="range" id="lineVariation" min="0" max="100" value="50">
+                                <span class="value-display">50</span>
+                            </div>
+
+                            <div class="control-group">
+                                <label for="lineThickness">Line Thickness</label>
+                                <input type="range" id="lineThickness" min="1" max="5" value="2" step="0.5">
+                                <span class="value-display">2</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Interior Design Controls -->
+                    <div class="collapsible-section">
+                        <h3 class="section-header" data-toggle="interior-design">
+                            <span>Interior Design Features</span>
+                            <span class="toggle-icon">▼</span>
+                        </h3>
+                        <div class="section-content" id="interior-design" style="display: none;">
+                            <div class="control-group">
+                                <label>Color Palette</label>
+                                <div class="color-palette-grid">
+                                    <div class="color-picker-group">
+                                        <label for="primaryColor">Primary</label>
+                                        <input type="color" id="primaryColor" value="#2c3e50">
+                                    </div>
+                                    <div class="color-picker-group">
+                                        <label for="secondaryColor">Secondary</label>
+                                        <input type="color" id="secondaryColor" value="#34495e">
+                                    </div>
+                                    <div class="color-picker-group">
+                                        <label for="accentColor">Accent</label>
+                                        <input type="color" id="accentColor" value="#e74c3c">
+                                    </div>
+                                    <div class="color-picker-group">
+                                        <label for="neutralColor">Neutral</label>
+                                        <input type="color" id="neutralColor" value="#ecf0f1">
+                                    </div>
+                                </div>
+                                <div class="palette-presets">
+                                    <button class="palette-btn" data-palette="warm">Warm</button>
+                                    <button class="palette-btn" data-palette="cool">Cool</button>
+                                    <button class="palette-btn" data-palette="neutral">Neutral</button>
+                                    <button class="palette-btn" data-palette="bold">Bold</button>
+                                </div>
+                            </div>
+
+                            <div class="control-group">
+                                <label>
+                                    <input type="checkbox" id="enableMaterialDetection">
+                                    Enable Material Detection
+                                </label>
+                            </div>
+
+                            <div class="material-detection-panel" id="materialPanel" style="display: none;">
+                                <h4>Detected Materials</h4>
+                                <div class="material-list" id="materialList">
+                                    <!-- Dynamically populated -->
+                                </div>
+                                <div class="material-confidence">
+                                    <label for="materialConfidence">Detection Confidence Threshold</label>
+                                    <input type="range" id="materialConfidence" min="0" max="100" value="70">
+                                    <span class="value-display">70%</span>
+                                </div>
+                            </div>
+
+                            <div class="control-group">
+                                <label>
+                                    <input type="checkbox" id="enableFurnitureDetection">
+                                    Enable Furniture Recognition
+                                </label>
+                            </div>
+
+                            <div class="control-group">
+                                <label>
+                                    <input type="checkbox" id="enableRoomAnalysis">
+                                    Enable Room Type Analysis
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Batch Processing -->
+                    <div class="collapsible-section">
+                        <h3 class="section-header" data-toggle="batch-processing">
+                            <span>Batch Processing</span>
+                            <span class="toggle-icon">▼</span>
+                        </h3>
+                        <div class="section-content" id="batch-processing" style="display: none;">
+                            <div class="control-group">
+                                <label for="batchFiles">Select Multiple Files</label>
+                                <input type="file" id="batchFiles" multiple accept="image/*">
+                            </div>
+
+                            <div class="batch-list" id="batchList"></div>
+
+                            <div class="control-group">
+                                <label>
+                                    <input type="checkbox" id="applyToAll">
+                                    Apply current settings to all files
+                                </label>
+                            </div>
+
+                            <div class="batch-progress" id="batchProgress" style="display: none;">
+                                <div class="progress-label">Batch Processing Progress</div>
+                                <div class="progress-bar">
+                                    <div class="progress-fill" id="batchProgressFill"></div>
+                                </div>
+                                <div class="progress-text" id="batchProgressText">0 of 0 files processed</div>
+                            </div>
+
+                            <div class="button-group">
+                                <button id="startBatchBtn" class="primary-btn" disabled>Start Batch Processing</button>
+                                <button id="pauseBatchBtn" class="secondary-btn" disabled>Pause</button>
+                                <button id="stopBatchBtn" class="secondary-btn" disabled>Stop</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Main Processing Controls -->
+                    <div class="main-controls">
+                        <div class="button-group">
+                            <button id="processBtn" class="primary-btn">Process Image</button>
+                            <button id="resetBtn" class="secondary-btn">Reset</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="canvas-container">
+                    <div class="canvas-wrapper">
+                        <h3>Original</h3>
+                        <canvas id="originalCanvas"></canvas>
+                    </div>
+                    <div class="canvas-wrapper">
+                        <h3>Hand-Drawn Result</h3>
+                        <canvas id="resultCanvas"></canvas>
+                        <div class="processing-overlay" id="processingOverlay" style="display: none;">
+                            <div class="spinner"></div>
+                            <p>Processing...</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="export-section">
+                    <div class="export-controls">
+                        <button id="downloadBtn" class="primary-btn" disabled>Download Result</button>
+                        <button id="downloadBatchBtn" class="primary-btn" disabled>Download All (Batch)</button>
+                        <div class="export-options">
+                            <label for="exportFormat">Export Format:</label>
+                            <select id="exportFormat">
+                                <option value="png">PNG</option>
+                                <option value="jpg">JPEG</option>
+                                <option value="svg">SVG</option>
+                                <option value="pdf">PDF</option>
+                            </select>
+                        </div>
+                        <div class="export-quality">
+                            <label for="exportQuality">Quality:</label>
+                            <input type="range" id="exportQuality" min="1" max="100" value="90">
+                            <span class="value-display">90%</span>
+                        </div>
+                    </div>
+
+                    <!-- Analysis Results Panel -->
+                    <div class="analysis-results" id="analysisResults" style="display: none;">
+                        <h3>AI Analysis Results</h3>
+                        <div class="analysis-content">
+                            <div class="detected-room-type" id="detectedRoomType"></div>
+                            <div class="detected-materials" id="detectedMaterials"></div>
+                            <div class="detected-furniture" id="detectedFurniture"></div>
+                            <div class="style-suggestions" id="styleSuggestions"></div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <footer>
+            <p>AI-powered architectural drawing converter optimized for SketchUp, Rhino, and CAD software</p>
+            <p>Features interior design analysis, material detection, and intelligent style recommendations</p>
+        </footer>
+    </div>
+
+    <!-- Core Processing Scripts -->
+    <script src="js/imageProcessor.js"></script>
+    <script src="js/edgeDetection.js"></script>
+    <script src="js/handDrawnEffects.js"></script>
+    
+    <!-- AI-Powered Features -->
+    <script src="js/aiProcessor.js"></script>
+    <script src="js/materialDetection.js"></script>
+    <script src="js/interiorDesignAI.js"></script>
+    <script src="js/presetManager.js"></script>
+    <script src="js/batchProcessor.js"></script>
+    <script src="js/collapsibleSections.js"></script>
+    
+    <!-- Main Application -->
+    <script src="js/main.js"></script>
+</body>
+</html>

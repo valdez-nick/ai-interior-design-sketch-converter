@@ -1,0 +1,45 @@
+{
+  "name": "ai-interior-design-sketch-converter",
+  "version": "1.0.0",
+  "description": "AI-powered tool that converts 3D rendered interior images to professional hand-drawn sketches",
+  "main": "index.html",
+  "scripts": {
+    "dev": "vercel dev",
+    "build": "npm run minify && npm run optimize",
+    "minify": "terser js/*.js --compress --mangle --output js/bundle.min.js",
+    "optimize": "cleancss css/styles.css -o css/styles.min.css",
+    "test": "node tests/testRunner.js",
+    "deploy": "vercel --prod",
+    "preview": "vercel",
+    "start": "python3 -m http.server 8000"
+  },
+  "keywords": [
+    "interior-design",
+    "ai",
+    "sketch-converter",
+    "stable-diffusion",
+    "architectural-drawings",
+    "design-tools"
+  ],
+  "author": "AI Interior Design Tools",
+  "license": "MIT",
+  "dependencies": {
+    "jszip": "^3.10.1"
+  },
+  "devDependencies": {
+    "terser": "^5.19.0",
+    "clean-css-cli": "^5.6.2",
+    "vercel": "^32.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-username/ai-interior-design-sketch-converter.git"
+  },
+  "homepage": "https://your-app.vercel.app",
+  "bugs": {
+    "url": "https://github.com/your-username/ai-interior-design-sketch-converter/issues"
+  }
+}

@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Interior Design Converter - Comprehensive Test Suite</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <style>
+        /* Test-specific styles */
+        .test-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .test-section {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            margin: 20px 0;
+            padding: 20px;
+        }
+        
+        .test-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .test-status {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+        
+        .status-pending { background: #ffc107; color: #212529; }
+        .status-running { background: #17a2b8; color: white; }
+        .status-passed { background: #28a745; color: white; }
+        .status-failed { background: #dc3545; color: white; }
+        
+        .test-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+        
+        .test-card {
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            padding: 15px;
+        }
+        
+        .test-controls {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        .test-results {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 10px;
+            margin-top: 10px;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        
+        .performance-metrics {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        .metric {
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 10px;
+            text-align: center;
+        }
+        
+        .metric-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #007bff;
+        }
+        
+        .metric-label {
+            font-size: 12px;
+            color: #6c757d;
+            margin-top: 5px;
+        }
+        
+        .image-comparison {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-top: 20px;
+        }
+        
+        .comparison-panel {
+            text-align: center;
+        }
+        
+        .comparison-canvas {
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            max-width: 100%;
+            height: auto;
+        }
+        
+        .test-sample-images {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        .sample-image {
+            border: 2px solid #dee2e6;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: border-color 0.2s;
+        }
+        
+        .sample-image:hover {
+            border-color: #007bff;
+        }
+        
+        .sample-image.selected {
+            border-color: #28a745;
+            border-width: 3px;
+        }
+        
+        .log-viewer {
+            background: #2d3748;
+            color: #e2e8f0;
+            font-family: monospace;
+            font-size: 12px;
+            padding: 15px;
+            border-radius: 4px;
+            max-height: 300px;
+            overflow-y: auto;
+            margin-top: 15px;
+        }
+        
+        .log-entry {
+            margin: 2px 0;
+            padding: 2px 0;
+        }
+        
+        .log-info { color: #63b3ed; }
+        .log-warn { color: #f6e05e; }
+        .log-error { color: #fc8181; }
+        .log-success { color: #68d391; }
+        
+        @media (max-width: 768px) {
+            .test-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .image-comparison {
+                grid-template-columns: 1fr;
+            }
+            
+            .performance-metrics {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <header>
+            <h1>AI Interior Design Converter - Test Suite</h1>
+            <p>Comprehensive testing for AI-enhanced interior design sketch conversion</p>
+            
+            <div class="test-controls">
+                <button id="runAllTests" class="primary-btn">Run All Tests</button>
+                <button id="runIntegrationTests" class="secondary-btn">Integration Tests</button>
+                <button id="runPerformanceTests" class="secondary-btn">Performance Tests</button>
+                <button id="clearResults" class="secondary-btn">Clear Results</button>
+                <button id="exportResults" class="secondary-btn">Export Report</button>
+            </div>
+            
+            <div class="performance-metrics" id="overallMetrics">
+                <div class="metric">
+                    <div class="metric-value" id="totalTests">0</div>
+                    <div class="metric-label">Total Tests</div>
+                </div>
+                <div class="metric">
+                    <div class="metric-value" id="passedTests">0</div>
+                    <div class="metric-label">Passed</div>
+                </div>
+                <div class="metric">
+                    <div class="metric-value" id="failedTests">0</div>
+                    <div class="metric-label">Failed</div>
+                </div>
+                <div class="metric">
+                    <div class="metric-value" id="averageTime">-</div>
+                    <div class="metric-label">Avg Time (ms)</div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Component Integration Tests -->
+        <section class="test-section">
+            <div class="test-header">
+                <h2>Component Integration Tests</h2>
+                <span class="test-status status-pending" id="integrationStatus">Pending</span>
+            </div>
+            
+            <div class="test-grid">
+                <div class="test-card">
+                    <h3>AI Processor Integration</h3>
+                    <p>Tests AI processor initialization and fallback mechanisms</p>
+                    <div class="test-controls">
+                        <button class="test-btn" data-test="aiProcessor">Run Test</button>
+                        <button class="test-btn" data-test="aiProcessorFallback">Test Fallback</button>
+                    </div>
+                    <div class="test-results" id="aiProcessorResults"></div>
+                </div>
+                
+                <div class="test-card">
+                    <h3>Style Manager Integration</h3>
+                    <p>Tests style presets and color palette management</p>
+                    <div class="test-controls">
+                        <button class="test-btn" data-test="styleManager">Run Test</button>
+                        <button class="test-btn" data-test="stylePresets">Test Presets</button>
+                    </div>
+                    <div class="test-results" id="styleManagerResults"></div>
+                </div>
+                
+                <div class="test-card">
+                    <h3>Hand-Drawn Effects Integration</h3>
+                    <p>Tests enhanced drawing effects with AI features</p>
+                    <div class="test-controls">
+                        <button class="test-btn" data-test="handDrawnEffects">Run Test</button>
+                        <button class="test-btn" data-test="materialAwareness">Test Materials</button>
+                    </div>
+                    <div class="test-results" id="handDrawnEffectsResults"></div>
+                </div>
+                
+                <div class="test-card">
+                    <h3>Main Application Flow</h3>
+                    <p>Tests complete image processing pipeline</p>
+                    <div class="test-controls">
+                        <button class="test-btn" data-test="mainFlow">Run Test</button>
+                        <button class="test-btn" data-test="errorHandling">Test Errors</button>
+                    </div>
+                    <div class="test-results" id="mainFlowResults"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Style Preset Tests -->
+        <section class="test-section">
+            <div class="test-header">
+                <h2>Style Preset Validation</h2>
+                <span class="test-status status-pending" id="styleStatus">Pending</span>
+            </div>
+            
+            <div class="test-card">
+                <h3>Interior Design Style Presets</h3>
+                <p>Test all built-in style presets with sample images</p>
+                
+                <div class="test-sample-images" id="sampleImages">
+                    <!-- Sample images will be loaded here -->
+                </div>
+                
+                <div class="test-controls">
+                    <select id="stylePresetSelect">
+                        <option value="designer-presentation">Designer Presentation</option>
+                        <option value="concept-exploration">Concept Exploration</option>
+                        <option value="technical-documentation">Technical Documentation</option>
+                        <option value="artistic-mood">Artistic Mood</option>
+                        <option value="minimal-lines">Minimal Lines</option>
+                    </select>
+                    <button class="test-btn" data-test="stylePresetTest">Test Style</button>
+                    <button class="test-btn" data-test="allStylesTest">Test All Styles</button>
+                </div>
+                
+                <div class="image-comparison" id="styleComparison">
+                    <div class="comparison-panel">
+                        <h4>Original</h4>
+                        <canvas id="originalTestCanvas" class="comparison-canvas" width="400" height="300"></canvas>
+                    </div>
+                    <div class="comparison-panel">
+                        <h4>Processed</h4>
+                        <canvas id="processedTestCanvas" class="comparison-canvas" width="400" height="300"></canvas>
+                    </div>
+                </div>
+                
+                <div class="test-results" id="stylePresetResults"></div>
+            </div>
+        </section>
+
+        <!-- Fallback Mechanism Tests -->
+        <section class="test-section">
+            <div class="test-header">
+                <h2>Fallback Mechanism Tests</h2>
+                <span class="test-status status-pending" id="fallbackStatus">Pending</span>
+            </div>
+            
+            <div class="test-grid">
+                <div class="test-card">
+                    <h3>AI Service Unavailable</h3>
+                    <p>Simulate AI service failure and test fallback</p>
+                    <div class="test-controls">
+                        <button class="test-btn" data-test="aiUnavailable">Simulate AI Failure</button>
+                        <button class="test-btn" data-test="networkError">Network Error</button>
+                    </div>
+                    <div class="test-results" id="aiUnavailableResults"></div>
+                </div>
+                
+                <div class="test-card">
+                    <h3>Traditional Processing</h3>
+                    <p>Test traditional processing without AI</p>
+                    <div class="test-controls">
+                        <button class="test-btn" data-test="traditionalOnly">Traditional Only</button>
+                        <button class="test-btn" data-test="compareProcessing">Compare Methods</button>
+                    </div>
+                    <div class="test-results" id="traditionalResults"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Batch Processing Tests -->
+        <section class="test-section">
+            <div class="test-header">
+                <h2>Batch Processing Tests</h2>
+                <span class="test-status status-pending" id="batchStatus">Pending</span>
+            </div>
+            
+            <div class="test-card">
+                <h3>Batch Operations</h3>
+                <p>Test batch processing with multiple images</p>
+                
+                <div class="test-controls">
+                    <input type="file" id="batchTestFiles" multiple accept="image/*">
+                    <button class="test-btn" data-test="batchConsistency">Test Consistency</button>
+                    <button class="test-btn" data-test="batchPerformance">Performance Test</button>
+                    <button class="test-btn" data-test="batchProgress">Progress Tracking</button>
+                </div>
+                
+                <div class="performance-metrics" id="batchMetrics">
+                    <div class="metric">
+                        <div class="metric-value" id="batchCount">0</div>
+                        <div class="metric-label">Images Processed</div>
+                    </div>
+                    <div class="metric">
+                        <div class="metric-value" id="batchTime">0</div>
+                        <div class="metric-label">Total Time (s)</div>
+                    </div>
+                    <div class="metric">
+                        <div class="metric-value" id="batchThroughput">0</div>
+                        <div class="metric-label">Images/Second</div>
+                    </div>
+                </div>
+                
+                <div class="test-results" id="batchResults"></div>
+            </div>
+        </section>
+
+        <!-- Mobile Responsiveness Tests -->
+        <section class="test-section">
+            <div class="test-header">
+                <h2>Mobile Responsiveness Tests</h2>
+                <span class="test-status status-pending" id="mobileStatus">Pending</span>
+            </div>
+            
+            <div class="test-grid">
+                <div class="test-card">
+                    <h3>Viewport Tests</h3>
+                    <p>Test UI responsiveness at different screen sizes</p>
+                    <div class="test-controls">
+                        <button class="test-btn" data-test="mobileViewport">Mobile (375px)</button>
+                        <button class="test-btn" data-test="tabletViewport">Tablet (768px)</button>
+                        <button class="test-btn" data-test="desktopViewport">Desktop (1200px)</button>
+                    </div>
+                    <div class="test-results" id="viewportResults"></div>
+                </div>
+                
+                <div class="test-card">
+                    <h3>Touch Interface</h3>
+                    <p>Test touch interactions and gesture support</p>
+                    <div class="test-controls">
+                        <button class="test-btn" data-test="touchInteraction">Touch Events</button>
+                        <button class="test-btn" data-test="gestureSupport">Gesture Support</button>
+                    </div>
+                    <div class="test-results" id="touchResults"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Performance Tests -->
+        <section class="test-section">
+            <div class="test-header">
+                <h2>Performance Tests</h2>
+                <span class="test-status status-pending" id="performanceStatus">Pending</span>
+            </div>
+            
+            <div class="test-grid">
+                <div class="test-card">
+                    <h3>Processing Speed</h3>
+                    <p>Measure processing times for different image sizes</p>
+                    <div class="test-controls">
+                        <button class="test-btn" data-test="speedSmallImage">Small (512x512)</button>
+                        <button class="test-btn" data-test="speedMediumImage">Medium (1024x1024)</button>
+                        <button class="test-btn" data-test="speedLargeImage">Large (2048x2048)</button>
+                    </div>
+                    <div class="test-results" id="speedResults"></div>
+                </div>
+                
+                <div class="test-card">
+                    <h3>Memory Usage</h3>
+                    <p>Monitor memory consumption during processing</p>
+                    <div class="test-controls">
+                        <button class="test-btn" data-test="memoryUsage">Monitor Memory</button>
+                        <button class="test-btn" data-test="memoryLeaks">Check Leaks</button>
+                    </div>
+                    <div class="test-results" id="memoryResults"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Error Handling Tests -->
+        <section class="test-section">
+            <div class="test-header">
+                <h2>Error Handling Tests</h2>
+                <span class="test-status status-pending" id="errorStatus">Pending</span>
+            </div>
+            
+            <div class="test-grid">
+                <div class="test-card">
+                    <h3>Invalid Input Handling</h3>
+                    <p>Test response to invalid or corrupted images</p>
+                    <div class="test-controls">
+                        <button class="test-btn" data-test="invalidImage">Invalid Image</button>
+                        <button class="test-btn" data-test="corruptedImage">Corrupted Image</button>
+                        <button class="test-btn" data-test="unsupportedFormat">Unsupported Format</button>
+                    </div>
+                    <div class="test-results" id="invalidInputResults"></div>
+                </div>
+                
+                <div class="test-card">
+                    <h3>API Error Handling</h3>
+                    <p>Test handling of API errors and timeouts</p>
+                    <div class="test-controls">
+                        <button class="test-btn" data-test="apiTimeout">API Timeout</button>
+                        <button class="test-btn" data-test="apiError">API Error</button>
+                        <button class="test-btn" data-test="rateLimiting">Rate Limiting</button>
+                    </div>
+                    <div class="test-results" id="apiErrorResults"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Test Logs -->
+        <section class="test-section">
+            <div class="test-header">
+                <h2>Test Execution Logs</h2>
+                <div class="test-controls">
+                    <button id="clearLogs" class="secondary-btn">Clear Logs</button>
+                    <button id="exportLogs" class="secondary-btn">Export Logs</button>
+                </div>
+            </div>
+            
+            <div class="log-viewer" id="testLogs">
+                <div class="log-entry log-info">Test suite initialized. Ready to run tests.</div>
+            </div>
+        </section>
+    </div>
+
+    <!-- Hidden elements for testing -->
+    <canvas id="hiddenTestCanvas" style="display: none;" width="512" height="512"></canvas>
+    <div id="testWorkspace" style="display: none;">
+        <canvas id="testOriginalCanvas" width="512" height="512"></canvas>
+        <canvas id="testResultCanvas" width="512" height="512"></canvas>
+    </div>
+
+    <!-- Core Processing Scripts -->
+    <script src="js/imageProcessor.js"></script>
+    <script src="js/edgeDetection.js"></script>
+    <script src="js/handDrawnEffects.js"></script>
+    <script src="js/aiProcessor.js"></script>
+    <script src="js/styleManager.js"></script>
+    <script src="js/main.js"></script>
+    
+    <!-- Test Framework -->
+    <script src="tests/testFramework.js"></script>
+    <script src="tests/integrationTests.js"></script>
+    <script src="tests/batchProcessingTests.js"></script>
+    <script src="tests/testUtils.js"></script>
+    <script src="tests/testRunner.js"></script>
+</body>
+</html>
