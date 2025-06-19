@@ -1,4 +1,15 @@
 {
+  "functions": {
+    "api/ai-process.js": {
+      "runtime": "@vercel/node"
+    },
+    "api/batch-process.js": {
+      "runtime": "@vercel/node"
+    },
+    "api/health.js": {
+      "runtime": "@vercel/node"
+    }
+  },
   "headers": [
     {
       "source": "/api/(.*)",
