@@ -354,6 +354,8 @@ startxref
 // Initialize modules
 async function init() {
     console.log('Initializing application...');
+    console.log('🤖 AI System Version: 2.0 (2025 Browser AI with Progressive Enhancement)');
+    console.log('🚀 Deployment Date:', new Date().toISOString());
     
     // Verify essential DOM elements exist
     if (!uploadArea || !fileInput) {
