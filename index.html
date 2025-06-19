@@ -346,13 +346,61 @@
     <script src="js/collapsibleSections.js"></script>
     
     <!-- 2025 Browser AI System -->
-    <script src="js/progressive-enhancement.js"></script>
-    <script src="js/browser-ai-engine.js"></script>
-    <script src="js/transformers-ai-engine.js"></script>
-    <script src="js/unified-ai-manager.js"></script>
+    <script>
+        console.log('🔍 Starting AI system script loading...');
+        window.aiScriptLoadStatus = {
+            progressiveEnhancement: false,
+            browserAI: false,
+            transformersAI: false,
+            unifiedAI: false,
+            main: false
+        };
+    </script>
+    
+    <script src="js/progressive-enhancement.js" onload="console.log('✅ progressive-enhancement.js loaded'); window.aiScriptLoadStatus.progressiveEnhancement = true;" onerror="console.error('❌ Failed to load progressive-enhancement.js')"></script>
+    <script src="js/browser-ai-engine.js" onload="console.log('✅ browser-ai-engine.js loaded'); window.aiScriptLoadStatus.browserAI = true;" onerror="console.error('❌ Failed to load browser-ai-engine.js')"></script>
+    <script src="js/transformers-ai-engine.js" onload="console.log('✅ transformers-ai-engine.js loaded'); window.aiScriptLoadStatus.transformersAI = true;" onerror="console.error('❌ Failed to load transformers-ai-engine.js')"></script>
+    <script src="js/unified-ai-manager.js" onload="console.log('✅ unified-ai-manager.js loaded'); window.aiScriptLoadStatus.unifiedAI = true;" onerror="console.error('❌ Failed to load unified-ai-manager.js')"></script>
     
     <!-- Main Application -->
-    <script src="js/main.js"></script>
+    <script src="js/main.js" onload="console.log('✅ main.js loaded'); window.aiScriptLoadStatus.main = true; console.log('📊 Script load status:', window.aiScriptLoadStatus);" onerror="console.error('❌ Failed to load main.js')"></script>
+    
+    <!-- Diagnostic Script -->
+    <script>
+        window.addEventListener('load', function() {
+            setTimeout(function() {
+                console.log('🔍 Page fully loaded - Running diagnostics...');
+                console.log('📊 Final script load status:', window.aiScriptLoadStatus);
+                
+                // Check if classes are available
+                console.log('🔍 Checking AI classes availability:');
+                console.log('  ProgressiveEnhancementManager:', typeof ProgressiveEnhancementManager !== 'undefined' ? '✅ Available' : '❌ Missing');
+                console.log('  BrowserAIEngine:', typeof BrowserAIEngine !== 'undefined' ? '✅ Available' : '❌ Missing');
+                console.log('  TransformersAIEngine:', typeof TransformersAIEngine !== 'undefined' ? '✅ Available' : '❌ Missing');
+                console.log('  UnifiedAIManager:', typeof UnifiedAIManager !== 'undefined' ? '✅ Available' : '❌ Missing');
+                
+                // Check if global objects are available
+                console.log('🔍 Checking global AI objects:');
+                console.log('  progressiveEnhancement:', typeof progressiveEnhancement !== 'undefined' ? '✅ Initialized' : '❌ Not initialized');
+                console.log('  unifiedAIManager:', typeof unifiedAIManager !== 'undefined' ? '✅ Initialized' : '❌ Not initialized');
+                
+                // Check if functions are available
+                console.log('🔍 Checking test functions:');
+                console.log('  getSystemStatus:', typeof getSystemStatus !== 'undefined' ? '✅ Available' : '❌ Missing');
+                console.log('  demoEdgeDetection:', typeof demoEdgeDetection !== 'undefined' ? '✅ Available' : '❌ Missing');
+                console.log('  runPerformanceBenchmark:', typeof runPerformanceBenchmark !== 'undefined' ? '✅ Available' : '❌ Missing');
+                
+                // Try to provide a manual initialization if needed
+                if (typeof getSystemStatus === 'undefined' && typeof window.getSystemStatus === 'function') {
+                    console.log('🔧 Exposing window functions globally...');
+                    window.getSystemStatus = window.getSystemStatus;
+                    window.demoEdgeDetection = window.demoEdgeDetection;
+                    window.runPerformanceBenchmark = window.runPerformanceBenchmark;
+                    console.log('✅ Functions exposed globally');
+                }
+            }, 2000); // Wait 2 seconds for everything to initialize
+        });
+    </script>
 </body>
 </html>
 <!-- AI System Deployment: 2025 Browser AI with Progressive Enhancement -->
