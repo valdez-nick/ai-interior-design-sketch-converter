@@ -75,7 +75,7 @@ Fill in all the required values in `.env.local`
 npm run dev
 ```
 
-Visit [http://localhost:3000](http://localhost:3000)
+Visit [http://localhost:3001](http://localhost:3001)
 
 ## 📁 Project Structure
 
